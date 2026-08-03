@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  password             String
+  name                 String
+  createdAt            DateTime  @default(now())
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  programs             Program[]
+}
+
+model Program {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days        ProgramDay[]
+}
+
+model ProgramDay {
+  id        String            @id @default(uuid())
+  name      String
+  order     Int               @default(0)
+  createdAt DateTime          @default(now())
+  programId String
+  program   Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  exercises ProgramExercise[]
+}
+
+model ProgramExercise {
+  id           String       @id @default(uuid())
+  name         String
+  targetSets   Int
+  targetReps   Int
+  restDuration Int
+  order        Int          @default(0)
+  createdAt    DateTime     @default(now())
+  programDayId String
+  programDay   ProgramDay   @relation(fields: [programDayId], references: [id], onDelete: Cascade)
+  logs         WorkoutLog[]
+}
+
+model WorkoutLog {
+  id                String          @id @default(uuid())
+  date              DateTime        @default(now())
+  weightUsed        Float
+  repsDone          Int
+  setsDone          Int
+  programExerciseId String
+  programExercise   ProgramExercise @relation(fields: [programExerciseId], references: [id], onDelete: Cascade)
+}
