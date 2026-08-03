@@ -47,3 +47,24 @@ export async function createProgramExercise(
   });
   return response.data;
 }
+
+export async function updateProgramExercise(
+  exerciseId: string,
+  name: string,
+  targetSets: number,
+  targetReps: number,
+  restDuration: number
+) {
+  const response = await api.put(`/days/exercises/${exerciseId}`, {
+    name,
+    targetSets,
+    targetReps,
+    restDuration,
+  });
+  return response.data;
+}
+
+export async function deleteProgramExercise(exerciseId: string) {
+  const response = await api.delete(`/days/exercises/${exerciseId}`);
+  return response.data;
+}

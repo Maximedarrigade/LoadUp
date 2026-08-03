@@ -13,6 +13,30 @@ type QueueExercise = {
   restDuration: number;
 };
 
+const EXERCISE_DONE_MESSAGES = [
+  "T'as arraché le matos ou quoi ?!",
+  "La fonte a demandé grâce.",
+  "Même Hercule prend des notes.",
+  "Thor a demandé ton numéro.",
+  "Le tapis de sol a eu peur.",
+  "Popeye appelle, il veut des conseils.",
+  "La barre a posté sa démission.",
+  "Tes biceps demandent une augmentation.",
+  "Le miroir de la salle a pris une photo souvenir.",
+];
+
+const DAY_DONE_MESSAGES = [
+  "Les poids ont pas fait les malins aujourd'hui !",
+  "La salle de sport te doit des excuses.",
+  "T'as tellement forcé que la barre a demandé un CDI.",
+  "Aujourd'hui, c'est toi le patron de la fonte.",
+  "Ton canapé t'attend, il a préparé le café.",
+  "Bravo, t'as fait pleurer la gravité.",
+  "Les haltères parlent encore de toi dans le vestiaire.",
+  "T'as mis la salle en PLS.",
+  "Ta douche t'attend, elle a mérité sa pause aussi.",
+];
+
 export default function LogWorkoutScreen() {
   const { programId, exerciseIndex, exercisesQueue } = useLocalSearchParams<{
     programId: string;
@@ -164,7 +188,9 @@ export default function LogWorkoutScreen() {
   return (
     <View style={styles.center}>
       <Text style={styles.doneTitle}>
-        {isLastExercise ? "Jour terminé !" : "Exercice terminé !"}
+        {isLastExercise
+          ? DAY_DONE_MESSAGES[Math.floor(Math.random() * DAY_DONE_MESSAGES.length)]
+          : EXERCISE_DONE_MESSAGES[Math.floor(Math.random() * EXERCISE_DONE_MESSAGES.length)]}
       </Text>
       <Text style={styles.exerciseName}>{current.name}</Text>
 
@@ -213,9 +239,10 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   doneTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#0a8a0a",
+    textAlign: "center",
   },
   input: {
     borderWidth: 1,
