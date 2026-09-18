@@ -177,6 +177,12 @@ export async function resetPassword(req: Request, res: Response) {
       });
     }
 
+    if (newPassword.length > 72) {
+      return res.status(400).json({
+        error: "Le mot de passe ne doit pas dépasser 72 caractères.",
+      });
+    }
+
     const user = await prisma.user.findFirst({
       where: {
         resetPasswordToken: hashResetToken(token),

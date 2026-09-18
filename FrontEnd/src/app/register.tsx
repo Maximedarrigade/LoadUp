@@ -66,6 +66,7 @@ export default function RegisterScreen() {
         onChangeText={setPassword}
         secureTextEntry
         placeholderTextColor="#888"
+        maxLength={72}
       />
 
       <TextInput
@@ -75,6 +76,7 @@ export default function RegisterScreen() {
         onChangeText={setConfirmPassword}
         secureTextEntry
         placeholderTextColor="#888"
+        maxLength={72}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}

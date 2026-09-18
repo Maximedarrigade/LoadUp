@@ -49,6 +49,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setPassword}
         secureTextEntry
         placeholderTextColor="#888"
+        maxLength={72}
       />
       <TextInput
         style={styles.input}
@@ -57,6 +58,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setConfirmPassword}
         secureTextEntry
         placeholderTextColor="#888"
+        maxLength={72}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}

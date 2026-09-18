@@ -42,6 +42,7 @@ export default function LoginScreen() {
         onChangeText={setPassword}
         secureTextEntry
         placeholderTextColor="#888"
+        maxLength={72}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
