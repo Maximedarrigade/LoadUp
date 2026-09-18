@@ -36,8 +36,8 @@ export default function EditExerciseScreen() {
     try {
       await updateProgramExercise(exerciseId, name, setsNum, repsNum, restNum);
       router.back();
-    } catch (err) {
-      setError("Erreur lors de la modification de l'exercice.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Erreur lors de la modification de l'exercice.");
     }
   }
 

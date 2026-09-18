@@ -67,8 +67,8 @@ export default function CreateExerciseScreen() {
         libraryExercise?.id ?? null
       );
       router.back();
-    } catch (err) {
-      setError("Erreur lors de la création de l'exercice.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Erreur lors de la création de l'exercice.");
     }
   }
 

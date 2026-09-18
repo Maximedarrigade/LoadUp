@@ -54,8 +54,8 @@ export default function CreateMealScreen() {
     try {
       const meal = await createMeal(mealName);
       setMealId(meal.id);
-    } catch (err) {
-      setError("Erreur lors de la création du repas.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Erreur lors de la création du repas.");
     }
   }
 
@@ -123,8 +123,8 @@ export default function CreateMealScreen() {
       setResults([]);
       setSearch("");
       setError("");
-    } catch (err) {
-      setError("Erreur lors de l'ajout de l'ingrédient.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Erreur lors de l'ajout de l'ingrédient.");
     }
   }
 

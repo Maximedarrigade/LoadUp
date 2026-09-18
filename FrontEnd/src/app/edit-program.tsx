@@ -24,8 +24,8 @@ export default function EditProgramScreen() {
     try {
       await updateProgram(id, name, description);
       router.back();
-    } catch (err) {
-      setError("Erreur lors de la modification du programme.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Erreur lors de la modification du programme.");
     }
   }
 

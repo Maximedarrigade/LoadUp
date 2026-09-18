@@ -18,8 +18,8 @@ export default function CreateDayScreen() {
     try {
       await createProgramDay(programId, name, 0);
       router.back();
-    } catch (err) {
-      setError("Erreur lors de la création du jour.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Erreur lors de la création du jour.");
     }
   }
 

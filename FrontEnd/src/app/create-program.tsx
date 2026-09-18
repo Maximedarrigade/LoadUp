@@ -167,8 +167,8 @@ export default function CreateProgramScreen() {
       }
 
       router.replace("/");
-    } catch (err) {
-      setError("Erreur lors de la création du programme.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Erreur lors de la création du programme.");
     } finally {
       setSubmitting(false);
     }
