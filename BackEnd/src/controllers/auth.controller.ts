@@ -3,8 +3,9 @@ import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import prisma from "../lib/prisma";
-import { registerSchema, loginSchema } from "../validators/auth.validator";
+import { registerSchema, loginSchema, updateProfileSchema } from "../validators/auth.validator";
 import { sendEmail } from "../lib/mailer";
+import { encryptDeterministic, decrypt } from "../lib/crypto";
 
 export async function register(req: Request, res: Response) {
   try {
@@ -13,8 +14,9 @@ export async function register(req: Request, res: Response) {
       return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
     const { email, password, name } = parseResult.data;
+    const encryptedEmail = encryptDeterministic(email);
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: encryptedEmail } });
     if (existingUser) {
       return res.status(409).json({ error: "Un compte existe déjà avec cet email." });
     }
@@ -22,12 +24,12 @@ export async function register(req: Request, res: Response) {
     const hashedPassword = await argon2.hash(password);
 
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name },
+      data: { email: encryptedEmail, password: hashedPassword, name },
     });
 
     res.status(201).json({
       id: user.id,
-      email: user.email,
+      email: decrypt(user.email),
       name: user.name,
     });
   } catch (error) {
@@ -44,7 +46,7 @@ export async function login(req: Request, res: Response) {
     }
     const { email, password } = parseResult.data;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: encryptDeterministic(email) } });
     if (!user) {
       return res.status(401).json({ error: "Identifiants invalides." });
     }
@@ -60,10 +62,45 @@ export async function login(req: Request, res: Response) {
       { expiresIn: "7d" }
     );
 
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+    res.json({ token, user: { id: user.id, email: decrypt(user.email), name: user.name } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erreur serveur lors de la connexion." });
+  }
+}
+
+export async function updateProfile(req: Request, res: Response) {
+  try {
+    const userId = req.userId as string;
+
+    const parseResult = updateProfileSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
+    }
+    const { name, email } = parseResult.data;
+
+    if (!name && !email) {
+      return res.status(400).json({ error: "Merci de renseigner un nom ou un email." });
+    }
+
+    const data: { name?: string; email?: string } = {};
+    if (name) data.name = name;
+
+    if (email) {
+      const encryptedEmail = encryptDeterministic(email);
+      const existingUser = await prisma.user.findUnique({ where: { email: encryptedEmail } });
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(409).json({ error: "Un compte existe déjà avec cet email." });
+      }
+      data.email = encryptedEmail;
+    }
+
+    const updated = await prisma.user.update({ where: { id: userId }, data });
+
+    res.json({ id: updated.id, name: updated.name, email: decrypt(updated.email) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur lors de la mise à jour du profil." });
   }
 }
 
@@ -88,7 +125,7 @@ export async function forgotPassword(req: Request, res: Response) {
       return res.status(400).json({ error: "Email requis." });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: encryptDeterministic(email) } });
 
     if (!user) {
       return res.json({
@@ -107,7 +144,7 @@ export async function forgotPassword(req: Request, res: Response) {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     await sendEmail(
-      user.email,
+      decrypt(user.email),
       "Réinitialisation de ton mot de passe LoadUp",
       `<p>Bonjour ${user.name},</p>
        <p>Clique sur ce lien pour réinitialiser ton mot de passe (valable 1 heure) :</p>

@@ -8,14 +8,20 @@ export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const setAuth = useAuthStore((state) => state.setAuth);
 
   async function handleRegister() {
     setError("");
 
-    if (!name.trim() || !email.trim() || !password.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       setError("Merci de remplir tous les champs.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas.");
       return;
     }
 
@@ -39,6 +45,7 @@ export default function RegisterScreen() {
         placeholder="Nom"
         value={name}
         onChangeText={setName}
+        placeholderTextColor="#888"
       />
 
       <TextInput
@@ -48,6 +55,7 @@ export default function RegisterScreen() {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
+        placeholderTextColor="#888"
       />
 
       <TextInput
@@ -56,6 +64,16 @@ export default function RegisterScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        placeholderTextColor="#888"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Confirmation du mot de passe"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+        placeholderTextColor="#888"
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -90,6 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: "#000",
   },
   error: {
     color: "red",

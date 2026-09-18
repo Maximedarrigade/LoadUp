@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
+import { getStreak } from "@/api/streak";
+import StreakBadge from "@/components/StreakBadge";
 
 type QueueExercise = {
   id: string;
@@ -31,6 +34,13 @@ export default function StartDayScreen() {
 
   const queue: QueueExercise[] = JSON.parse(exercisesQueue || "[]");
   const message = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+  const [currentStreak, setCurrentStreak] = useState(0);
+
+  useEffect(() => {
+    getStreak()
+      .then((data) => setCurrentStreak(data.currentStreak))
+      .catch((error) => console.error(error));
+  }, []);
 
   function handleStart() {
     router.replace({
@@ -47,6 +57,7 @@ export default function StartDayScreen() {
     <View style={styles.container}>
       <Text style={styles.dayName}>{dayName}</Text>
       <Text style={styles.message}>{message}</Text>
+      <StreakBadge currentStreak={currentStreak} />
 
       <Text style={styles.listTitle}>Au programme aujourd'hui :</Text>
 

@@ -36,7 +36,8 @@ export async function createProgramExercise(
   targetSets: number,
   targetReps: number,
   restDuration: number,
-  order: number
+  order: number,
+  exerciseLibraryId?: string | null
 ) {
   const response = await api.post(`/days/${dayId}/exercises`, {
     name,
@@ -44,6 +45,7 @@ export async function createProgramExercise(
     targetReps,
     restDuration,
     order,
+    exerciseLibraryId,
   });
   return response.data;
 }
@@ -53,13 +55,15 @@ export async function updateProgramExercise(
   name: string,
   targetSets: number,
   targetReps: number,
-  restDuration: number
+  restDuration: number,
+  exerciseLibraryId?: string | null
 ) {
   const response = await api.put(`/days/exercises/${exerciseId}`, {
     name,
     targetSets,
     targetReps,
     restDuration,
+    exerciseLibraryId,
   });
   return response.data;
 }

@@ -30,7 +30,9 @@ export async function getPrograms(req: Request, res: Response) {
       include: {
         days: {
           orderBy: { order: "asc" },
-          include: { exercises: { orderBy: { order: "asc" } } },
+          include: {
+            exercises: { orderBy: { order: "asc" }, include: { exerciseLibrary: true } },
+          },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -53,7 +55,9 @@ export async function getProgramById(req: Request, res: Response) {
       include: {
         days: {
           orderBy: { order: "asc" },
-          include: { exercises: { orderBy: { order: "asc" } } },
+          include: {
+            exercises: { orderBy: { order: "asc" }, include: { exerciseLibrary: true } },
+          },
         },
       },
     });

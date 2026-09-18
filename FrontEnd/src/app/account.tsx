@@ -1,13 +1,53 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
-import { deleteAccount } from "@/api/auth";
+import { deleteAccount, updateProfile } from "@/api/auth";
+import DismissKeyboardView from "@/components/DismissKeyboardView";
 
 export default function AccountScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, token, logout, setAuth } = useAuthStore();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState("");
+
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState("");
+
+  function startEditing() {
+    setName(user?.name ?? "");
+    setEmail(user?.email ?? "");
+    setError("");
+    setSuccess("");
+    setEditing(true);
+  }
+
+  async function handleSave() {
+    setError("");
+    setSuccess("");
+
+    if (!name.trim() || !email.trim()) {
+      setError("Le nom et l'email sont requis.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await updateProfile({ name: name.trim(), email: email.trim() });
+      if (token) {
+        setAuth({ id: updated.id, name: updated.name, email: updated.email }, token);
+      }
+      setEditing(false);
+      setSuccess("Profil mis à jour avec succès.");
+    } catch (err: any) {
+      const message = err?.response?.data?.error || "Erreur lors de la mise à jour du profil.";
+      setError(message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleDeleteAccount() {
     setError("");
@@ -21,18 +61,64 @@ export default function AccountScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <DismissKeyboardView style={styles.container}>
       <Text style={styles.title}>Mon compte</Text>
 
-      <View style={styles.infoBlock}>
-        <Text style={styles.label}>Nom</Text>
-        <Text style={styles.value}>{user?.name}</Text>
-      </View>
+      {editing ? (
+        <View style={styles.editBlock}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nom"
+            value={name}
+            onChangeText={setName}
+            placeholderTextColor="#888"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholderTextColor="#888"
+          />
 
-      <View style={styles.infoBlock}>
-        <Text style={styles.label}>Email</Text>
-        <Text style={styles.value}>{user?.email}</Text>
-      </View>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <View style={styles.editActions}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => {
+                setEditing(false);
+                setError("");
+              }}
+            >
+              <Text style={styles.cancelButtonText}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
+              <Text style={styles.saveButtonText}>{saving ? "Enregistrement..." : "Enregistrer"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <>
+          {success ? <Text style={styles.success}>{success}</Text> : null}
+
+          <View style={styles.infoBlock}>
+            <Text style={styles.label}>Nom</Text>
+            <Text style={styles.value}>{user?.name}</Text>
+          </View>
+
+          <View style={styles.infoBlock}>
+            <Text style={styles.label}>Email</Text>
+            <Text style={styles.value}>{user?.email}</Text>
+          </View>
+
+          <TouchableOpacity style={styles.editButton} onPress={startEditing}>
+            <Text style={styles.editButtonText}>Modifier mon profil</Text>
+          </TouchableOpacity>
+        </>
+      )}
 
       {confirmingDelete ? (
         <View style={styles.confirmBox}>
@@ -40,7 +126,7 @@ export default function AccountScreen() {
             Supprimer ton compte supprimera définitivement tous tes programmes et
             ton historique. Cette action est irréversible.
           </Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error && !editing ? <Text style={styles.error}>{error}</Text> : null}
           <View style={styles.confirmActions}>
             <TouchableOpacity
               style={styles.cancelButton}
@@ -64,7 +150,7 @@ export default function AccountScreen() {
           <Text style={styles.deleteButtonText}>Supprimer mon compte</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </DismissKeyboardView>
   );
 }
 
@@ -93,6 +179,49 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  editButton: {
+    backgroundColor: "#eee",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  editButtonText: {
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  editBlock: {
+    gap: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: "#000",
+  },
+  editActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: "#000",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  success: {
+    color: "#0a8a0a",
+    fontWeight: "600",
+    fontSize: 13,
+    textAlign: "center",
   },
   deleteButton: {
     backgroundColor: "#ffe5e5",

@@ -10,6 +10,11 @@ export async function login(email: string, password: string) {
   return response.data;
 }
 
+export async function updateProfile(data: { name?: string; email?: string }) {
+  const response = await api.put("/auth/profile", data);
+  return response.data;
+}
+
 export async function deleteAccount() {
   const response = await api.delete("/auth/account");
   return response.data;

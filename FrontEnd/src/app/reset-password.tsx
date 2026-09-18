@@ -48,6 +48,7 @@ export default function ResetPasswordScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        placeholderTextColor="#888"
       />
       <TextInput
         style={styles.input}
@@ -55,6 +56,7 @@ export default function ResetPasswordScreen() {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry
+        placeholderTextColor="#888"
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -85,6 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: "#000",
   },
   error: {
     color: "red",

@@ -15,7 +15,12 @@ model User {
   createdAt            DateTime  @default(now())
   resetPasswordToken   String?
   resetPasswordExpires DateTime?
+  currentStreak        Int       @default(0)
+  longestStreak        Int       @default(0)
+  lastWorkoutDate      DateTime?
   programs             Program[]
+  nutritionProfile     NutritionProfile?
+  meals                Meal[]
 }
 
 model Program {
@@ -39,16 +44,34 @@ model ProgramDay {
 }
 
 model ProgramExercise {
-  id           String       @id @default(uuid())
-  name         String
-  targetSets   Int
-  targetReps   Int
-  restDuration Int
-  order        Int          @default(0)
-  createdAt    DateTime     @default(now())
-  programDayId String
-  programDay   ProgramDay   @relation(fields: [programDayId], references: [id], onDelete: Cascade)
-  logs         WorkoutLog[]
+  id                String           @id @default(uuid())
+  name              String
+  targetSets        Int
+  targetReps        Int
+  restDuration      Int
+  order             Int              @default(0)
+  createdAt         DateTime         @default(now())
+  programDayId      String
+  programDay        ProgramDay       @relation(fields: [programDayId], references: [id], onDelete: Cascade)
+  exerciseLibraryId String?
+  exerciseLibrary   ExerciseLibrary? @relation(fields: [exerciseLibraryId], references: [id], onDelete: SetNull)
+  logs              WorkoutLog[]
+}
+
+model ExerciseLibrary {
+  id               String            @id
+  name             String
+  gifUrl           String
+  bodyParts        String[]
+  equipments       String[]
+  targetMuscles    String[]
+  secondaryMuscles String[]
+  instructions     String[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  programExercises ProgramExercise[]
+
+  @@index([name])
 }
 
 model WorkoutLog {
@@ -59,4 +82,40 @@ model WorkoutLog {
   setsDone          Int
   programExerciseId String
   programExercise   ProgramExercise @relation(fields: [programExerciseId], references: [id], onDelete: Cascade)
+}
+
+model NutritionProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weight        Float
+  height        Float
+  age           Int
+  gender        String
+  activityLevel String
+  goal          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Meal {
+  id          String           @id @default(uuid())
+  name        String
+  date        DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredients MealIngredient[]
+}
+
+model MealIngredient {
+  id              String   @id @default(uuid())
+  name            String
+  weightInGrams   Float
+  caloriesPer100g Float
+  proteinPer100g  Float
+  openFoodFactsId String?
+  createdAt       DateTime @default(now())
+  mealId          String
+  meal            Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
 }

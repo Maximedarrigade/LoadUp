@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { createWorkoutLog } from "@/api/workouts";
 import RestTimer from "@/components/RestTimer";
+import ExerciseGif from "@/components/ExerciseGif";
+import DismissKeyboardView from "@/components/DismissKeyboardView";
 
 type Phase = "set" | "resting" | "form" | "done";
 
@@ -11,6 +13,7 @@ type QueueExercise = {
   name: string;
   targetSets: number;
   restDuration: number;
+  gifUrl?: string | null;
 };
 
 const EXERCISE_DONE_MESSAGES = [
@@ -57,6 +60,7 @@ export default function LogWorkoutScreen() {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
   const [error, setError] = useState("");
+  const repsInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
@@ -132,6 +136,7 @@ export default function LogWorkoutScreen() {
         <Text style={styles.progressLabel}>
           Exercice {index + 1}/{queue.length}
         </Text>
+        <ExerciseGif gifUrl={current.gifUrl} size={140} />
         <Text style={styles.exerciseName}>{current.name}</Text>
         <Text style={styles.setCounter}>
           Série {currentSet}/{totalSets}
@@ -146,6 +151,7 @@ export default function LogWorkoutScreen() {
   if (phase === "resting") {
     return (
       <View style={styles.center}>
+        <ExerciseGif gifUrl={current.gifUrl} size={100} />
         <Text style={styles.exerciseName}>{current.name}</Text>
         <Text style={styles.restLabel}>
           Pause avant la série {currentSet + 1}/{totalSets}
@@ -157,7 +163,7 @@ export default function LogWorkoutScreen() {
 
   if (phase === "form") {
     return (
-      <View style={styles.container}>
+      <DismissKeyboardView style={styles.container}>
         <Text style={styles.exerciseName}>{current.name}</Text>
         <Text style={styles.setCounter}>Toutes les séries terminées 💪</Text>
 
@@ -167,13 +173,20 @@ export default function LogWorkoutScreen() {
           value={weight}
           onChangeText={setWeight}
           keyboardType="numeric"
+          placeholderTextColor="#888"
+          returnKeyType="next"
+          onSubmitEditing={() => repsInputRef.current?.focus()}
         />
         <TextInput
+          ref={repsInputRef}
           style={styles.input}
           placeholder="Répétitions faites (dernière série)"
           value={reps}
           onChangeText={setReps}
           keyboardType="numeric"
+          placeholderTextColor="#888"
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -181,7 +194,7 @@ export default function LogWorkoutScreen() {
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={styles.buttonText}>Enregistrer</Text>
         </TouchableOpacity>
-      </View>
+      </DismissKeyboardView>
     );
   }
 
@@ -250,6 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: "#000",
   },
   error: {
     color: "red",

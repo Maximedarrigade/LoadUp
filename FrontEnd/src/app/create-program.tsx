@@ -1,13 +1,28 @@
-import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { createProgram, createProgramDay, createProgramExercise } from "@/api/programs";
+import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
+import ExerciseGif from "@/components/ExerciseGif";
 
 type ExerciseForm = {
   name: string;
   sets: string;
   reps: string;
   rest: string;
+  exerciseLibraryId?: string | null;
+  gifUrl?: string | null;
+  manualMode?: boolean;
 };
 
 type DayForm = {
@@ -23,6 +38,49 @@ export default function CreateProgramScreen() {
   ]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [activeSlot, setActiveSlot] = useState<{ dayIndex: number; exerciseIndex: number } | null>(
+    null
+  );
+  const selected = useExerciseSelectionStore((state) => state.selected);
+  const clearSelected = useExerciseSelectionStore((state) => state.clear);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (selected && activeSlot) {
+        setDays((prev) => {
+          const updated = prev.map((day) => ({ ...day, exercises: [...day.exercises] }));
+          updated[activeSlot.dayIndex].exercises[activeSlot.exerciseIndex] = {
+            ...updated[activeSlot.dayIndex].exercises[activeSlot.exerciseIndex],
+            name: selected.name,
+            exerciseLibraryId: selected.id,
+            gifUrl: selected.gifUrl,
+            manualMode: false,
+          };
+          return updated;
+        });
+        setActiveSlot(null);
+        clearSelected();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected, activeSlot, clearSelected])
+  );
+
+  function openCatalogFor(dayIndex: number, exerciseIndex: number) {
+    setActiveSlot({ dayIndex, exerciseIndex });
+    router.push("/exercise-library");
+  }
+
+  function enableManualModeFor(dayIndex: number, exerciseIndex: number) {
+    const updated = [...days];
+    updated[dayIndex].exercises[exerciseIndex] = {
+      ...updated[dayIndex].exercises[exerciseIndex],
+      name: "",
+      exerciseLibraryId: null,
+      gifUrl: null,
+      manualMode: true,
+    };
+    setDays(updated);
+  }
 
   function addDay() {
     setDays([...days, { name: "", exercises: [{ name: "", sets: "", reps: "", rest: "" }] }]);
@@ -55,7 +113,7 @@ export default function CreateProgramScreen() {
   function updateExerciseField(
     dayIndex: number,
     exerciseIndex: number,
-    field: keyof ExerciseForm,
+    field: "name" | "sets" | "reps" | "rest",
     value: string
   ) {
     const updated = [...days];
@@ -100,7 +158,8 @@ export default function CreateProgramScreen() {
             parseInt(ex.sets, 10),
             parseInt(ex.reps, 10),
             parseInt(ex.rest, 10),
-            exOrder
+            exOrder,
+            ex.exerciseLibraryId ?? null
           );
         }
       }
@@ -114,7 +173,8 @@ export default function CreateProgramScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Nouveau programme</Text>
 
       <TextInput
@@ -122,6 +182,7 @@ export default function CreateProgramScreen() {
         placeholder="Nom du programme"
         value={name}
         onChangeText={setName}
+        placeholderTextColor="#888"
       />
       <TextInput
         style={[styles.input, styles.textArea]}
@@ -130,6 +191,7 @@ export default function CreateProgramScreen() {
         onChangeText={setDescription}
         multiline
         numberOfLines={3}
+        placeholderTextColor="#888"
       />
 
       {days.map((day, dayIndex) => (
@@ -140,6 +202,7 @@ export default function CreateProgramScreen() {
               placeholder={`Nom du jour ${dayIndex + 1} (ex: Pecs-Triceps)`}
               value={day.name}
               onChangeText={(value) => updateDayName(dayIndex, value)}
+              placeholderTextColor="#888"
             />
             {days.length > 1 ? (
               <TouchableOpacity onPress={() => removeDay(dayIndex)}>
@@ -150,14 +213,56 @@ export default function CreateProgramScreen() {
 
           {day.exercises.map((exercise, exerciseIndex) => (
             <View key={exerciseIndex} style={styles.exerciseBlock}>
-              <TextInput
-                style={styles.input}
-                placeholder="Nom de l'exercice"
-                value={exercise.name}
-                onChangeText={(value) =>
-                  updateExerciseField(dayIndex, exerciseIndex, "name", value)
+              {exercise.manualMode ? (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nom de l'exercice"
+                  value={exercise.name}
+                  onChangeText={(value) =>
+                    updateExerciseField(dayIndex, exerciseIndex, "name", value)
+                  }
+                  placeholderTextColor="#888"
+                />
+              ) : (
+                <View style={styles.pickerRow}>
+                  <TouchableOpacity
+                    style={[styles.input, styles.pickerField]}
+                    onPress={() => openCatalogFor(dayIndex, exerciseIndex)}
+                  >
+                    <Text style={exercise.name ? styles.pickerValue : styles.pickerPlaceholder}>
+                      {exercise.name || "Toucher pour choisir dans le catalogue"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.gifButton}
+                    onPress={() => openCatalogFor(dayIndex, exerciseIndex)}
+                  >
+                    <Ionicons name="images" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {exercise.gifUrl ? (
+                <View style={styles.libraryBadge}>
+                  <ExerciseGif gifUrl={exercise.gifUrl} size={40} />
+                  <Text style={styles.libraryBadgeText}>Exercice du catalogue sélectionné</Text>
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                onPress={() =>
+                  exercise.manualMode
+                    ? openCatalogFor(dayIndex, exerciseIndex)
+                    : enableManualModeFor(dayIndex, exerciseIndex)
                 }
-              />
+              >
+                <Text style={styles.manualLink}>
+                  {exercise.manualMode
+                    ? "Choisir dans le catalogue à la place"
+                    : "Je ne trouve pas mon exercice ? Saisir un nom manuellement"}
+                </Text>
+              </TouchableOpacity>
+
               <View style={styles.row}>
                 <TextInput
                   style={[styles.input, styles.smallInput]}
@@ -168,6 +273,9 @@ export default function CreateProgramScreen() {
                   }
                   keyboardType="numeric"
                   maxLength={2}
+                  placeholderTextColor="#888"
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
                 <TextInput
                   style={[styles.input, styles.smallInput]}
@@ -178,6 +286,9 @@ export default function CreateProgramScreen() {
                   }
                   keyboardType="numeric"
                   maxLength={2}
+                  placeholderTextColor="#888"
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
                 <TextInput
                   style={[styles.input, styles.smallInput]}
@@ -187,6 +298,9 @@ export default function CreateProgramScreen() {
                     updateExerciseField(dayIndex, exerciseIndex, "rest", value)
                   }
                   keyboardType="numeric"
+                  placeholderTextColor="#888"
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
               </View>
               {day.exercises.length > 1 ? (
@@ -222,6 +336,7 @@ export default function CreateProgramScreen() {
         </Text>
       </TouchableOpacity>
     </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -242,6 +357,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: "#000",
   },
   textArea: {
     height: 80,
@@ -274,6 +390,47 @@ const styles = StyleSheet.create({
   smallInput: {
     width: 70,
     flex: 0,
+  },
+  pickerRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "stretch",
+  },
+  pickerField: {
+    flex: 1,
+  },
+  gifButton: {
+    backgroundColor: "#000",
+    borderRadius: 8,
+    width: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pickerPlaceholder: {
+    fontSize: 16,
+    color: "#888",
+  },
+  pickerValue: {
+    fontSize: 16,
+    color: "#000",
+  },
+  libraryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#f2f2f2",
+    borderRadius: 8,
+    padding: 6,
+  },
+  libraryBadgeText: {
+    fontSize: 12,
+    color: "#666",
+    flex: 1,
+  },
+  manualLink: {
+    fontSize: 12,
+    color: "#0066cc",
+    fontWeight: "600",
   },
   removeText: {
     color: "#cc0000",

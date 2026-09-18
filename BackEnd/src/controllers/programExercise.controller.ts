@@ -5,7 +5,7 @@ export async function createProgramExercise(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
     const dayId = req.params.dayId as string;
-    const { name, targetSets, targetReps, restDuration, order } = req.body;
+    const { name, targetSets, targetReps, restDuration, order, exerciseLibraryId } = req.body;
 
     if (!name || !targetSets || !targetReps || restDuration === undefined) {
       return res.status(400).json({
@@ -21,6 +21,15 @@ export async function createProgramExercise(req: Request, res: Response) {
       return res.status(404).json({ error: "Jour d'entraînement introuvable." });
     }
 
+    if (exerciseLibraryId) {
+      const libraryExercise = await prisma.exerciseLibrary.findUnique({
+        where: { id: exerciseLibraryId },
+      });
+      if (!libraryExercise) {
+        return res.status(404).json({ error: "Exercice du catalogue introuvable." });
+      }
+    }
+
     const exercise = await prisma.programExercise.create({
       data: {
         name,
@@ -29,7 +38,9 @@ export async function createProgramExercise(req: Request, res: Response) {
         restDuration,
         order: order ?? 0,
         programDayId: dayId,
+        exerciseLibraryId: exerciseLibraryId ?? null,
       },
+      include: { exerciseLibrary: true },
     });
 
     res.status(201).json(exercise);
@@ -43,7 +54,7 @@ export async function updateProgramExercise(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
     const exerciseId = req.params.exerciseId as string;
-    const { name, targetSets, targetReps, restDuration } = req.body;
+    const { name, targetSets, targetReps, restDuration, exerciseLibraryId } = req.body;
 
     if (!name || !targetSets || !targetReps || restDuration === undefined) {
       return res.status(400).json({
@@ -62,9 +73,19 @@ export async function updateProgramExercise(req: Request, res: Response) {
       return res.status(404).json({ error: "Exercice introuvable." });
     }
 
+    if (exerciseLibraryId) {
+      const libraryExercise = await prisma.exerciseLibrary.findUnique({
+        where: { id: exerciseLibraryId },
+      });
+      if (!libraryExercise) {
+        return res.status(404).json({ error: "Exercice du catalogue introuvable." });
+      }
+    }
+
     const updated = await prisma.programExercise.update({
       where: { id: exerciseId },
-      data: { name, targetSets, targetReps, restDuration },
+      data: { name, targetSets, targetReps, restDuration, exerciseLibraryId: exerciseLibraryId ?? null },
+      include: { exerciseLibrary: true },
     });
 
     res.json(updated);

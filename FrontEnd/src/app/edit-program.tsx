@@ -38,6 +38,7 @@ export default function EditProgramScreen() {
         placeholder="Nom du programme"
         value={name}
         onChangeText={setName}
+        placeholderTextColor="#888"
       />
 
       <TextInput
@@ -47,6 +48,7 @@ export default function EditProgramScreen() {
         onChangeText={setDescription}
         multiline
         numberOfLines={4}
+        placeholderTextColor="#888"
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -76,6 +78,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: "#000",
   },
   textArea: {
     height: 100,

@@ -1,8 +1,18 @@
 import axios from "axios";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { useAuthStore } from "@/store/authStore";
 
+function getApiBaseUrl() {
+  if (Platform.OS === "web") return "http://localhost:3000";
+  // On a physical device via Expo Go, "localhost" refers to the device itself.
+  // Reuse the Metro dev server's LAN host (same machine running the backend).
+  const host = Constants.expoConfig?.hostUri?.split(":")[0];
+  return host ? `http://${host}:3000` : "http://localhost:3000";
+}
+
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: getApiBaseUrl(),
 });
 
 api.interceptors.request.use((config) => {

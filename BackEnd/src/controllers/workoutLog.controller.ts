@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { updateUserStreak } from "../lib/streak";
 
 export async function createWorkoutLog(req: Request, res: Response) {
   try {
@@ -32,6 +33,8 @@ export async function createWorkoutLog(req: Request, res: Response) {
         programExerciseId: exerciseId,
       },
     });
+
+    await updateUserStreak(userId);
 
     res.status(201).json(log);
   } catch (error) {

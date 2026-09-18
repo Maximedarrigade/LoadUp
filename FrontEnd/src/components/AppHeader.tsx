@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
+import wordmark from "@/assets/images/white_c_wordmark.png";
 
 export default function AppHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -22,9 +23,13 @@ export default function AppHeader() {
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => router.replace("/")}>
-        <Text style={styles.title} role="heading" aria-level={1}>
-          LoadUp
-        </Text>
+        <Image
+          source={wordmark}
+          style={styles.wordmark}
+          resizeMode="contain"
+          accessibilityRole="header"
+          accessibilityLabel="LoadUp"
+        />
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => setMenuOpen(true)}>
@@ -43,6 +48,13 @@ export default function AppHeader() {
               onPress={() => navigateAndClose("/")}
             >
               <Text style={styles.menuItemText}>Mes programmes</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigateAndClose("/nutrition")}
+            >
+              <Text style={styles.menuItemText}>Nutrition</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -69,15 +81,14 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 20,
-    backgroundColor: "#000",
+    backgroundColor: "#0a0a0a",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
+  wordmark: {
+    width: 90,
+    height: 28,
   },
   overlay: {
     flex: 1,

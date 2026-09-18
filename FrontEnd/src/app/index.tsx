@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
 import { getPrograms, deleteProgram } from "@/api/programs";
+import { getStreak } from "@/api/streak";
+import StreakBadge from "@/components/StreakBadge";
 
 type Program = {
   id: string;
@@ -16,6 +18,7 @@ export default function HomeScreen() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loadingPrograms, setLoadingPrograms] = useState(true);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   useEffect(() => {
     hydrate();
@@ -27,13 +30,7 @@ export default function HomeScreen() {
     }
   }, [isHydrated, user]);
 
-  useEffect(() => {
-    if (user) {
-      loadPrograms();
-    }
-  }, [user]);
-
-  async function loadPrograms() {
+  const loadPrograms = useCallback(async () => {
     try {
       const data = await getPrograms();
       setPrograms(data);
@@ -42,7 +39,25 @@ export default function HomeScreen() {
     } finally {
       setLoadingPrograms(false);
     }
-  }
+  }, []);
+
+  const loadStreak = useCallback(async () => {
+    try {
+      const data = await getStreak();
+      setCurrentStreak(data.currentStreak);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        loadPrograms();
+        loadStreak();
+      }
+    }, [user, loadPrograms, loadStreak])
+  );
 
   async function confirmDelete(id: string) {
     try {
@@ -73,6 +88,7 @@ export default function HomeScreen() {
 
       <View style={styles.container}>
         <Text style={styles.title}>Bonjour {user?.name}</Text>
+        <StreakBadge currentStreak={currentStreak} />
 
         <FlatList
           data={programs}

@@ -32,6 +32,7 @@ export default function LoginScreen() {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
+        placeholderTextColor="#888"
       />
 
       <TextInput
@@ -40,6 +41,7 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        placeholderTextColor="#888"
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -78,6 +80,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: "#000",
   },
   error: {
     color: "red",

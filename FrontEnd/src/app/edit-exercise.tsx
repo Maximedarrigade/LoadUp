@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useRef, useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { updateProgramExercise } from "@/api/programs";
+import DismissKeyboardView from "@/components/DismissKeyboardView";
 
 export default function EditExerciseScreen() {
   const { exerciseId, currentName, currentSets, currentReps, currentRest } =
@@ -18,6 +19,8 @@ export default function EditExerciseScreen() {
   const [reps, setReps] = useState(currentReps || "");
   const [rest, setRest] = useState(currentRest || "");
   const [error, setError] = useState("");
+  const repsInputRef = useRef<TextInput>(null);
+  const restInputRef = useRef<TextInput>(null);
 
   async function handleSubmit() {
     setError("");
@@ -39,7 +42,7 @@ export default function EditExerciseScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <DismissKeyboardView style={styles.container}>
       <Text style={styles.title}>Modifier l'exercice</Text>
 
       <TextInput
@@ -47,6 +50,7 @@ export default function EditExerciseScreen() {
         placeholder="Nom de l'exercice"
         value={name}
         onChangeText={setName}
+        placeholderTextColor="#888"
       />
       <View style={styles.row}>
         <TextInput
@@ -56,21 +60,32 @@ export default function EditExerciseScreen() {
           onChangeText={setSets}
           keyboardType="numeric"
           maxLength={2}
+          placeholderTextColor="#888"
+          returnKeyType="next"
+          onSubmitEditing={() => repsInputRef.current?.focus()}
         />
         <TextInput
+          ref={repsInputRef}
           style={[styles.input, styles.smallInput]}
           placeholder="Reps"
           value={reps}
           onChangeText={setReps}
           keyboardType="numeric"
           maxLength={2}
+          placeholderTextColor="#888"
+          returnKeyType="next"
+          onSubmitEditing={() => restInputRef.current?.focus()}
         />
         <TextInput
+          ref={restInputRef}
           style={[styles.input, styles.smallInput]}
           placeholder="Pause (s)"
           value={rest}
           onChangeText={setRest}
           keyboardType="numeric"
+          placeholderTextColor="#888"
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
         />
       </View>
 
@@ -79,7 +94,7 @@ export default function EditExerciseScreen() {
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Enregistrer les modifications</Text>
       </TouchableOpacity>
-    </View>
+    </DismissKeyboardView>
   );
 }
 
@@ -101,6 +116,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: "#000",
   },
   row: {
     flexDirection: "row",
