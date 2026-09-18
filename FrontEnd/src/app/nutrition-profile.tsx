@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
+  GestureResponderEvent,
+  Platform,
   StyleSheet,
   ScrollView,
 } from "react-native";
@@ -93,8 +95,17 @@ export default function NutritionProfileScreen() {
     return <View style={styles.container} />;
   }
 
+  function handleOutsidePress(event: GestureResponderEvent) {
+    // On web, a tap on a nested TextInput fires a click that bubbles up to
+    // this wrapper too. Only dismiss when the tap landed on the wrapper
+    // itself, otherwise the keyboard we just opened gets closed immediately.
+    if (Platform.OS !== "web" || event.target === event.currentTarget) {
+      Keyboard.dismiss();
+    }
+  }
+
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <TouchableWithoutFeedback onPress={handleOutsidePress} accessible={false}>
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Mon profil nutritionnel</Text>
 
