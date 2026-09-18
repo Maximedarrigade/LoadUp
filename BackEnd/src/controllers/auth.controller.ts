@@ -7,6 +7,10 @@ import { registerSchema, loginSchema, updateProfileSchema } from "../validators/
 import { sendEmail } from "../lib/mailer";
 import { encryptDeterministic, decrypt } from "../lib/crypto";
 
+function hashResetToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
 export async function register(req: Request, res: Response) {
   try {
     const parseResult = registerSchema.safeParse(req.body);
@@ -138,7 +142,7 @@ export async function forgotPassword(req: Request, res: Response) {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { resetPasswordToken: token, resetPasswordExpires: expires },
+      data: { resetPasswordToken: hashResetToken(token), resetPasswordExpires: expires },
     });
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
@@ -175,7 +179,7 @@ export async function resetPassword(req: Request, res: Response) {
 
     const user = await prisma.user.findFirst({
       where: {
-        resetPasswordToken: token,
+        resetPasswordToken: hashResetToken(token),
         resetPasswordExpires: { gt: new Date() },
       },
     });
