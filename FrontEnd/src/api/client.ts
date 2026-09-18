@@ -4,6 +4,9 @@ import { Platform } from "react-native";
 import { useAuthStore } from "@/store/authStore";
 
 function getApiBaseUrl() {
+  // Baked in at build time for production (Vercel sets EXPO_PUBLIC_API_URL).
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+
   if (Platform.OS === "web") return "http://localhost:3000";
   // On a physical device via Expo Go, "localhost" refers to the device itself.
   // Reuse the Metro dev server's LAN host (same machine running the backend).
