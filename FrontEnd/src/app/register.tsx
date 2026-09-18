@@ -46,6 +46,7 @@ export default function RegisterScreen() {
         value={name}
         onChangeText={setName}
         placeholderTextColor="#888"
+        maxLength={50}
       />
 
       <TextInput

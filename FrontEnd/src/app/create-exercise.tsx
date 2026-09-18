@@ -83,6 +83,7 @@ export default function CreateExerciseScreen() {
           value={name}
           onChangeText={setName}
           placeholderTextColor="#888"
+          maxLength={100}
         />
       ) : (
         <View style={styles.pickerRow}>

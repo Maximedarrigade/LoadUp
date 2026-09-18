@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { safeText } from "./common.validator";
 
 export const registerSchema = z.object({
   email: z.string().email("Email invalide."),
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères.").max(50),
+  name: safeText(2, 50, "Le nom"),
 });
 
 export const loginSchema = z.object({
@@ -12,6 +13,6 @@ export const loginSchema = z.object({
 });
 
 export const updateProfileSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères.").max(50).optional(),
+  name: safeText(2, 50, "Le nom").optional(),
   email: z.string().email("Email invalide.").optional(),
 });

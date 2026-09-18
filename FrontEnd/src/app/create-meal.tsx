@@ -192,6 +192,7 @@ export default function CreateMealScreen() {
           value={mealName}
           onChangeText={setMealName}
           placeholderTextColor="#888"
+          maxLength={100}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <TouchableOpacity style={styles.button} onPress={handleCreateMeal}>
@@ -320,6 +321,7 @@ export default function CreateMealScreen() {
                 value={manualName}
                 onChangeText={setManualName}
                 placeholderTextColor="#888"
+                maxLength={150}
               />
               <TextInput
                 style={styles.input}

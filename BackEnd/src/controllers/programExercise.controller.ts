@@ -1,17 +1,16 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { programExerciseSchema } from "../validators/programExercise.validator";
 
 export async function createProgramExercise(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
     const dayId = req.params.dayId as string;
-    const { name, targetSets, targetReps, restDuration, order, exerciseLibraryId } = req.body;
-
-    if (!name || !targetSets || !targetReps || restDuration === undefined) {
-      return res.status(400).json({
-        error: "Nom, séries, répétitions et durée de pause sont requis.",
-      });
+    const parseResult = programExerciseSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
+    const { name, targetSets, targetReps, restDuration, order, exerciseLibraryId } = parseResult.data;
 
     const day = await prisma.programDay.findFirst({
       where: { id: dayId, program: { userId } },
@@ -54,13 +53,11 @@ export async function updateProgramExercise(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
     const exerciseId = req.params.exerciseId as string;
-    const { name, targetSets, targetReps, restDuration, exerciseLibraryId } = req.body;
-
-    if (!name || !targetSets || !targetReps || restDuration === undefined) {
-      return res.status(400).json({
-        error: "Nom, séries, répétitions et durée de pause sont requis.",
-      });
+    const parseResult = programExerciseSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
+    const { name, targetSets, targetReps, restDuration, exerciseLibraryId } = parseResult.data;
 
     const exercise = await prisma.programExercise.findFirst({
       where: {

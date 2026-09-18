@@ -183,6 +183,7 @@ export default function CreateProgramScreen() {
         value={name}
         onChangeText={setName}
         placeholderTextColor="#888"
+        maxLength={100}
       />
       <TextInput
         style={[styles.input, styles.textArea]}
@@ -192,6 +193,7 @@ export default function CreateProgramScreen() {
         multiline
         numberOfLines={3}
         placeholderTextColor="#888"
+        maxLength={500}
       />
 
       {days.map((day, dayIndex) => (
@@ -203,6 +205,7 @@ export default function CreateProgramScreen() {
               value={day.name}
               onChangeText={(value) => updateDayName(dayIndex, value)}
               placeholderTextColor="#888"
+              maxLength={100}
             />
             {days.length > 1 ? (
               <TouchableOpacity onPress={() => removeDay(dayIndex)}>
@@ -222,6 +225,7 @@ export default function CreateProgramScreen() {
                     updateExerciseField(dayIndex, exerciseIndex, "name", value)
                   }
                   placeholderTextColor="#888"
+                  maxLength={100}
                 />
               ) : (
                 <View style={styles.pickerRow}>

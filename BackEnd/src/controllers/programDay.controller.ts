@@ -1,15 +1,16 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { programDaySchema } from "../validators/programDay.validator";
 
 export async function createProgramDay(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
     const programId = req.params.programId as string;
-    const { name, order } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: "Le nom du jour est requis." });
+    const parseResult = programDaySchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
+    const { name, order } = parseResult.data;
 
     const program = await prisma.program.findFirst({
       where: { id: programId, userId },

@@ -1,14 +1,15 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { programSchema } from "../validators/program.validator";
 
 export async function createProgram(req: Request, res: Response) {
   try {
-    const { name, description } = req.body;
     const userId = req.userId as string;
-
-    if (!name) {
-      return res.status(400).json({ error: "Le nom du programme est requis." });
+    const parseResult = programSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
+    const { name, description } = parseResult.data;
 
     const program = await prisma.program.create({
       data: { name, description, userId },
@@ -77,11 +78,11 @@ export async function updateProgram(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
     const id = req.params.id as string;
-    const { name, description } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: "Le nom du programme est requis." });
+    const parseResult = programSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
+    const { name, description } = parseResult.data;
 
     const program = await prisma.program.findFirst({ where: { id, userId } });
     if (!program) {

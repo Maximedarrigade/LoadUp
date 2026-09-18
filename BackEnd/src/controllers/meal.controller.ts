@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { computeNutritionTargets, NutritionProfileInput } from "../lib/nutrition";
+import { createMealSchema, mealIngredientSchema } from "../validators/meal.validator";
 
 function ingredientTotals(ingredient: { weightInGrams: number; caloriesPer100g: number; proteinPer100g: number }) {
   return {
@@ -36,7 +37,11 @@ function dayRange(dateParam: unknown) {
 export async function createMeal(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
-    const { name, date } = req.body;
+    const parseResult = createMealSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
+    }
+    const { name, date } = parseResult.data;
 
     const meal = await prisma.meal.create({
       data: {
@@ -116,13 +121,11 @@ export async function addMealIngredient(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
     const mealId = req.params.mealId as string;
-    const { name, weightInGrams, caloriesPer100g, proteinPer100g, openFoodFactsId } = req.body;
-
-    if (!name || !weightInGrams || caloriesPer100g === undefined || proteinPer100g === undefined) {
-      return res.status(400).json({
-        error: "Nom, poids, calories/100g et protéines/100g sont requis.",
-      });
+    const parseResult = mealIngredientSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
+    const { name, weightInGrams, caloriesPer100g, proteinPer100g, openFoodFactsId } = parseResult.data;
 
     const meal = await prisma.meal.findFirst({ where: { id: mealId, userId } });
     if (!meal) {

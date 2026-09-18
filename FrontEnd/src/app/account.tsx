@@ -72,6 +72,7 @@ export default function AccountScreen() {
             value={name}
             onChangeText={setName}
             placeholderTextColor="#888"
+            maxLength={50}
           />
           <TextInput
             style={styles.input}
