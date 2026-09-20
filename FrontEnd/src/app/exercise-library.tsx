@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  ViewToken,
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
@@ -16,29 +15,21 @@ import {
   LibraryExercise,
 } from "@/api/exerciseLibrary";
 import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
-import ExerciseGif from "@/components/ExerciseGif";
+import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 
-// Chaque GIF décodé pèse ~2 Mo en mémoire (180x180, 12-18 frames). On ne monte donc
-// une image animée que pour les lignes réellement visibles à l'écran : les autres
-// affichent un simple placeholder, et le GIF est libéré dès que la ligne sort de l'écran.
-const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 10, minimumViewTime: 100 };
-
+// La liste n'affiche que des miniatures statiques (quelques Ko) : un GIF animé pèse
+// ~2 Mo décodé, et en monter des dizaines pendant le scroll saturait Safari iOS.
+// Le GIF animé n'est affiché qu'une fois l'exercice choisi.
 const ExerciseRow = memo(function ExerciseRow({
   item,
-  showGif,
   onSelect,
 }: {
   item: LibraryExercise;
-  showGif: boolean;
   onSelect: (exercise: LibraryExercise) => void;
 }) {
   return (
     <TouchableOpacity style={styles.card} onPress={() => onSelect(item)}>
-      {showGif ? (
-        <ExerciseGif gifUrl={item.gifUrl} size={56} />
-      ) : (
-        <View style={styles.gifPlaceholder} />
-      )}
+      <ExerciseThumbnail exerciseId={item.id} gifUrl={item.gifUrl} size={56} />
       <View style={{ flex: 1 }}>
         <Text style={styles.cardName}>{item.name}</Text>
         <Text style={styles.cardMeta}>
@@ -60,13 +51,8 @@ export default function ExerciseLibraryScreen() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
   const requestIdRef = useRef(0);
   const hasSelectedRef = useRef(false);
-
-  const handleViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
-    setVisibleIds(new Set(viewableItems.map((token) => (token.item as LibraryExercise).id)));
-  }).current;
 
   useEffect(() => {
     getExerciseLibraryBodyParts()
@@ -84,7 +70,6 @@ export default function ExerciseLibraryScreen() {
       });
       // Ignore une réponse périmée (recherche modifiée entre-temps).
       if (requestId !== requestIdRef.current) return;
-      setVisibleIds(new Set());
       setExercises(result.data);
       setNextCursor(result.nextCursor);
     } catch (error) {
@@ -176,11 +161,7 @@ export default function ExerciseLibraryScreen() {
           maxToRenderPerBatch={8}
           windowSize={5}
           removeClippedSubviews
-          viewabilityConfig={VIEWABILITY_CONFIG}
-          onViewableItemsChanged={handleViewableItemsChanged}
-          renderItem={({ item }) => (
-            <ExerciseRow item={item} showGif={visibleIds.has(item.id)} onSelect={handleSelect} />
-          )}
+          renderItem={({ item }) => <ExerciseRow item={item} onSelect={handleSelect} />}
         />
       )}
     </View>
@@ -239,12 +220,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f2f2f2",
     borderRadius: 10,
     padding: 10,
-  },
-  gifPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: "#e4e4e4",
   },
   cardName: {
     fontSize: 15,

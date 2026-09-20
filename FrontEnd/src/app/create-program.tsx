@@ -15,7 +15,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { createProgram, createProgramDay, createProgramExercise } from "@/api/programs";
 import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
-import ExerciseGif from "@/components/ExerciseGif";
+import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 
 type ExerciseForm = {
   name: string;
@@ -259,7 +259,11 @@ export default function CreateProgramScreen() {
 
               {exercise.gifUrl ? (
                 <View style={styles.libraryBadge}>
-                  <ExerciseGif gifUrl={exercise.gifUrl} size={40} />
+                  <ExerciseThumbnail
+                    exerciseId={exercise.exerciseLibraryId}
+                    gifUrl={exercise.gifUrl}
+                    size={40}
+                  />
                   <Text style={styles.libraryBadgeText}>Exercice du catalogue sélectionné</Text>
                 </View>
               ) : null}

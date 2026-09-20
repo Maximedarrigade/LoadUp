@@ -4,7 +4,7 @@ import { useLocalSearchParams, useFocusEffect, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { createProgramExercise } from "@/api/programs";
 import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
-import ExerciseGif from "@/components/ExerciseGif";
+import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
 
 export default function CreateExerciseScreen() {
@@ -100,7 +100,11 @@ export default function CreateExerciseScreen() {
 
       {libraryExercise ? (
         <View style={styles.libraryBadge}>
-          <ExerciseGif gifUrl={libraryExercise.gifUrl} size={44} />
+          <ExerciseThumbnail
+            exerciseId={libraryExercise.id}
+            gifUrl={libraryExercise.gifUrl}
+            size={44}
+          />
           <Text style={styles.libraryBadgeText}>Exercice du catalogue sélectionné</Text>
         </View>
       ) : null}

@@ -3,7 +3,7 @@ import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet }
 import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getProgramById, deleteProgram, deleteProgramExercise } from "@/api/programs";
-import ExerciseGif from "@/components/ExerciseGif";
+import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 
 type Exercise = {
   id: string;
@@ -207,7 +207,11 @@ export default function ProgramDetailScreen() {
                 ) : (
                   <>
                     <View style={styles.exerciseHeader}>
-                      <ExerciseGif gifUrl={exercise.exerciseLibrary?.gifUrl} size={48} />
+                      <ExerciseThumbnail
+                        exerciseId={exercise.exerciseLibrary?.id}
+                        gifUrl={exercise.exerciseLibrary?.gifUrl}
+                        size={48}
+                      />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.exerciseName}>{exercise.name}</Text>
                         <Text style={styles.exerciseDetails}>
