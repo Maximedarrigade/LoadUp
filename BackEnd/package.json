@@ -8,6 +8,7 @@
     "start": "tsx src/server.ts",
     "postinstall": "prisma generate",
     "sync:exercise-library": "tsx src/scripts/syncExerciseLibrary.ts",
+    "rotate:encryption-key": "tsx src/scripts/rotateEncryptionKey.ts",
     "generate:exercise-thumbnails": "tsx src/scripts/generateExerciseThumbnails.ts"
   },
   "keywords": [],
