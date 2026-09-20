@@ -59,8 +59,7 @@ function fixIconFonts() {
 // resolve "/programs/:id" to its bracketed file, then fall back to
 // appending ".html" for every other route.
 function writeVercelConfig() {
-  fs.writeFileSync(
-    path.join(distDir, "vercel.json"),
+  const config =
     JSON.stringify(
       {
         routes: [
@@ -71,9 +70,15 @@ function writeVercelConfig() {
       },
       null,
       2
-    ) + "\n"
-  );
-  console.log("Généré : dist/vercel.json (routage des URLs propres).");
+    ) + "\n";
+
+  // dist/vercel.json sert aux déploiements manuels (`vercel deploy` depuis dist/).
+  // FrontEnd/vercel.json est celui lu par les builds Git de Vercel (projet dont le
+  // Root Directory est FrontEnd) : il doit être versionné, car Vercel le lit avant
+  // de lancer le build, donc trop tôt pour qu'il soit généré ici.
+  fs.writeFileSync(path.join(distDir, "vercel.json"), config);
+  fs.writeFileSync(path.join(__dirname, "..", "vercel.json"), config);
+  console.log("Généré : dist/vercel.json et vercel.json (routage des URLs propres).");
 }
 
 fixIconFonts();

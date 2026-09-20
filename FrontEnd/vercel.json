@@ -1,0 +1,16 @@
+{
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "^/programs/([^/]+)$",
+      "dest": "/programs/%5Bid%5D.html"
+    },
+    {
+      "src": "^/([^.]+)$",
+      "dest": "/$1.html",
+      "check": true
+    }
+  ]
+}
