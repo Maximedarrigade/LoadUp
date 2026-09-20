@@ -29,6 +29,15 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function isGifReachable(url: string): Promise<boolean> {
+  try {
+    const response = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(15000) });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function fetchPage(after: string | null, attempt = 1): Promise<ApiListResponse> {
   const url = new URL(`${API_BASE}/exercises`);
   url.searchParams.set("limit", String(PAGE_LIMIT));
@@ -60,8 +69,17 @@ async function main() {
     const result = await fetchPage(after);
     page += 1;
 
+    // Un exercice dont le GIF est inaccessible n'a pas sa place dans le catalogue.
+    const reachability = await Promise.all(result.data.map((exercise) => isGifReachable(exercise.gifUrl)));
+    const validExercises = result.data.filter((_, index) => reachability[index]);
+    const skippedIds = result.data.filter((_, index) => !reachability[index]).map((e) => e.exerciseId);
+    if (skippedIds.length) {
+      await prisma.exerciseLibrary.deleteMany({ where: { id: { in: skippedIds } } });
+      console.warn(`  ${skippedIds.length} exercice(s) ignoré(s) (GIF inaccessible) : ${skippedIds.join(", ")}`);
+    }
+
     await Promise.all(
-      result.data.map((exercise) =>
+      validExercises.map((exercise) =>
         prisma.exerciseLibrary.upsert({
           where: { id: exercise.exerciseId },
           create: {
@@ -87,8 +105,8 @@ async function main() {
       )
     );
 
-    total += result.data.length;
-    console.log(`Page ${page} : ${result.data.length} exercices synchronisés (total ${total}).`);
+    total += validExercises.length;
+    console.log(`Page ${page} : ${validExercises.length} exercices synchronisés (total ${total}).`);
 
     if (!result.meta.hasNextPage || !result.meta.nextCursor) break;
     after = result.meta.nextCursor;
