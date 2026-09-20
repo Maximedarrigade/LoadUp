@@ -20,7 +20,25 @@ const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Middlewares
 app.use(helmet());
-app.use(cors(FRONTEND_URL ? { origin: FRONTEND_URL } : undefined));
+
+// Les déploiements d'aperçu Vercel (branches, PR) ont une URL différente de la prod :
+// loadup-muscu-<hash>-max-64e3.vercel.app ou loadup-muscu-git-<branche>-max-64e3.vercel.app.
+// Le suffixe -max-64e3 (slug de l'équipe Vercel) empêche un tiers d'en créer de valides.
+const VERCEL_PREVIEW_ORIGIN = /^https:\/\/loadup-muscu-(git-[a-z0-9-]+|[a-z0-9]+)-max-64e3\.vercel\.app$/;
+
+function isAllowedOrigin(origin: string) {
+  return origin === FRONTEND_URL || VERCEL_PREVIEW_ORIGIN.test(origin);
+}
+
+app.use(
+  cors(
+    FRONTEND_URL
+      ? {
+          origin: (origin, callback) => callback(null, !origin || isAllowedOrigin(origin)),
+        }
+      : undefined
+  )
+);
 app.use(express.json());
 
 // Routes
