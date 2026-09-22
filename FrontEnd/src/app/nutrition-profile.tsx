@@ -19,6 +19,9 @@ import {
   Gender,
   Goal,
 } from "@/api/nutritionProfile";
+import SectionLabel from "@/components/SectionLabel";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: "male", label: "Homme" },
@@ -110,39 +113,39 @@ export default function NutritionProfileScreen() {
       <Text style={styles.title}>Mon profil nutritionnel</Text>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.numericInput]}
         placeholder="Poids (kg)"
         value={weight}
         onChangeText={setWeight}
         keyboardType="numeric"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         returnKeyType="next"
         onSubmitEditing={() => heightInputRef.current?.focus()}
       />
       <TextInput
         ref={heightInputRef}
-        style={styles.input}
+        style={[styles.input, styles.numericInput]}
         placeholder="Taille (cm)"
         value={height}
         onChangeText={setHeight}
         keyboardType="numeric"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         returnKeyType="next"
         onSubmitEditing={() => ageInputRef.current?.focus()}
       />
       <TextInput
         ref={ageInputRef}
-        style={styles.input}
+        style={[styles.input, styles.numericInput]}
         placeholder="Âge"
         value={age}
         onChangeText={setAge}
         keyboardType="numeric"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         returnKeyType="done"
         onSubmitEditing={() => Keyboard.dismiss()}
       />
 
-      <Text style={styles.sectionLabel}>Sexe</Text>
+      <SectionLabel style={styles.sectionLabel}>Sexe</SectionLabel>
       <View style={styles.optionsRow}>
         {GENDER_OPTIONS.map((option) => (
           <TouchableOpacity
@@ -157,7 +160,7 @@ export default function NutritionProfileScreen() {
         ))}
       </View>
 
-      <Text style={styles.sectionLabel}>Niveau d'activité</Text>
+      <SectionLabel style={styles.sectionLabel}>Niveau d'activité</SectionLabel>
       <View style={styles.optionsColumn}>
         {ACTIVITY_OPTIONS.map((option) => (
           <TouchableOpacity
@@ -174,7 +177,7 @@ export default function NutritionProfileScreen() {
         ))}
       </View>
 
-      <Text style={styles.sectionLabel}>Objectif</Text>
+      <SectionLabel style={styles.sectionLabel}>Objectif</SectionLabel>
       <View style={styles.optionsRow}>
         {GOAL_OPTIONS.map((option) => (
           <TouchableOpacity
@@ -191,9 +194,11 @@ export default function NutritionProfileScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Enregistrer</Text>
-      </TouchableOpacity>
+      <IronButton
+        label="Enregistrer"
+        onPress={handleSubmit}
+        style={{ marginTop: 16, marginBottom: 40 }}
+      />
     </ScrollView>
     </TouchableWithoutFeedback>
   );
@@ -202,27 +207,33 @@ export default function NutritionProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 40,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 24,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
+  },
+  numericInput: {
+    fontFamily: FontFamily.mono,
   },
   sectionLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 8,
-    color: "#333",
+    marginTop: 10,
+    marginBottom: 2,
   },
   optionsRow: {
     flexDirection: "row",
@@ -233,37 +244,28 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 20,
+    borderRadius: Radius,
   },
   chipActive: {
-    backgroundColor: "#000",
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
   },
   chipText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    fontWeight: "600",
-    color: "#333",
+    color: Colors.ink,
   },
   chipTextActive: {
-    color: "#fff",
+    color: Colors.bg,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-    marginBottom: 40,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

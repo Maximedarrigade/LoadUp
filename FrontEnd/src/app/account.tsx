@@ -4,6 +4,8 @@ import { router } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
 import { deleteAccount, updateProfile } from "@/api/auth";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function AccountScreen() {
   const { user, token, logout, setAuth } = useAuthStore();
@@ -71,7 +73,7 @@ export default function AccountScreen() {
             placeholder="Nom"
             value={name}
             onChangeText={setName}
-            placeholderTextColor="#888"
+            placeholderTextColor={Colors.muted}
             maxLength={50}
           />
           <TextInput
@@ -81,7 +83,7 @@ export default function AccountScreen() {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
-            placeholderTextColor="#888"
+            placeholderTextColor={Colors.muted}
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -96,9 +98,13 @@ export default function AccountScreen() {
             >
               <Text style={styles.cancelButtonText}>Annuler</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
-              <Text style={styles.saveButtonText}>{saving ? "Enregistrement..." : "Enregistrer"}</Text>
-            </TouchableOpacity>
+            <IronButton
+              label={saving ? "Enregistrement..." : "Enregistrer"}
+              onPress={handleSave}
+              disabled={saving}
+              loading={saving}
+              style={{ flex: 1 }}
+            />
           </View>
         </View>
       ) : (
@@ -159,97 +165,104 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 40,
     gap: 16,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 12,
   },
   infoBlock: {
-    backgroundColor: "#f2f2f2",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: Radius,
   },
   label: {
-    fontSize: 12,
-    color: "#999",
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: Colors.muted,
     marginBottom: 4,
   },
   value: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    fontWeight: "600",
+    color: Colors.ink,
   },
   editButton: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: Radius,
     alignItems: "center",
   },
   editButtonText: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
+    color: Colors.ink,
   },
   editBlock: {
     gap: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   editActions: {
     flexDirection: "row",
     gap: 8,
   },
-  saveButton: {
-    flex: 1,
-    backgroundColor: "#000",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
   success: {
-    color: "#0a8a0a",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.flame,
     fontSize: 13,
     textAlign: "center",
   },
   deleteButton: {
-    backgroundColor: "#ffe5e5",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.accent,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: Radius,
     alignItems: "center",
     marginTop: 20,
   },
   deleteButtonText: {
-    color: "#cc0000",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.accent,
     fontSize: 15,
   },
   confirmBox: {
     marginTop: 20,
     padding: 14,
-    backgroundColor: "#fff0f0",
-    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    borderRadius: Radius,
     gap: 10,
   },
   confirmText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    color: "#cc0000",
-    fontWeight: "600",
+    color: Colors.accent,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     fontSize: 13,
   },
   confirmActions: {
@@ -258,25 +271,29 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
+    justifyContent: "center",
   },
   cancelButtonText: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
+    color: Colors.ink,
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: "#cc0000",
+    backgroundColor: Colors.accent,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
   },
   confirmButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodyBold,
+    color: Colors.bg,
     fontSize: 13,
   },
 });

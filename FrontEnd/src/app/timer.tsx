@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import RestTimer from "@/components/RestTimer";
+import { Colors, FontFamily } from "@/theme";
 
 export default function TimerScreen() {
   const { duration } = useLocalSearchParams<{ duration: string }>();
@@ -20,9 +21,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 20,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingSemiBold,
     fontSize: 20,
-    fontWeight: "600",
+    textTransform: "uppercase",
+    color: Colors.ink,
   },
 });

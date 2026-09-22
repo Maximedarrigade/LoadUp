@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { Colors, Radius } from "@/theme";
 
 type ExerciseThumbnailProps = {
   exerciseId?: string | null;
@@ -21,7 +22,7 @@ export default function ExerciseThumbnail({ exerciseId, gifUrl, size = 56 }: Exe
   if (hasError) {
     return (
       <View style={[styles.image, styles.fallback, { width: size, height: size }]}>
-        <Ionicons name="barbell" size={size * 0.5} color="#bbb" />
+        <Ionicons name="barbell" size={size * 0.5} color={Colors.muted} />
       </View>
     );
   }
@@ -39,11 +40,13 @@ export default function ExerciseThumbnail({ exerciseId, gifUrl, size = 56 }: Exe
 
 const styles = StyleSheet.create({
   image: {
-    borderRadius: 8,
-    backgroundColor: "#f2f2f2",
+    borderRadius: Radius,
+    backgroundColor: Colors.surface,
   },
   fallback: {
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.line,
   },
 });

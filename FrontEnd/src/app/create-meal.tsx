@@ -15,6 +15,8 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { createMeal, addMealIngredient } from "@/api/meals";
 import { searchFoodByName, searchFoodByBarcode, FoodResult } from "@/api/foodSearch";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
 type AddedIngredient = {
   id: string;
@@ -191,13 +193,11 @@ export default function CreateMealScreen() {
           placeholder="Nom du repas (ex: Déjeuner)"
           value={mealName}
           onChangeText={setMealName}
-          placeholderTextColor="#888"
+          placeholderTextColor={Colors.muted}
           maxLength={100}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity style={styles.button} onPress={handleCreateMeal}>
-          <Text style={styles.buttonText}>Créer le repas</Text>
-        </TouchableOpacity>
+        <IronButton label="Créer le repas" onPress={handleCreateMeal} />
       </View>
     );
   }
@@ -240,22 +240,21 @@ export default function CreateMealScreen() {
             100g
           </Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.numericInput]}
             placeholder="Poids de la portion (g)"
             value={portionWeight}
             onChangeText={setPortionWeight}
             keyboardType="numeric"
-            placeholderTextColor="#888"
+            placeholderTextColor={Colors.muted}
             returnKeyType="done"
             onSubmitEditing={() => Keyboard.dismiss()}
           />
           <View style={styles.row}>
-            <TouchableOpacity
-              style={[styles.button, styles.flexButton]}
+            <IronButton
+              label="Ajouter au repas"
               onPress={handleAddSelectedFood}
-            >
-              <Text style={styles.buttonText}>Ajouter au repas</Text>
-            </TouchableOpacity>
+              style={{ flex: 1 }}
+            />
             <TouchableOpacity
               style={[styles.cancelButton, styles.flexButton]}
               onPress={() => setSelectedFood(null)}
@@ -273,7 +272,7 @@ export default function CreateMealScreen() {
               value={search}
               onChangeText={setSearch}
               onSubmitEditing={handleSearch}
-              placeholderTextColor="#888"
+              placeholderTextColor={Colors.muted}
             />
             <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
               <Text style={styles.searchButtonText}>Chercher</Text>
@@ -286,7 +285,9 @@ export default function CreateMealScreen() {
             </TouchableOpacity>
           ) : null}
 
-          {searching ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+          {searching ? (
+            <ActivityIndicator color={Colors.accent} style={{ marginTop: 12 }} />
+          ) : null}
 
           <FlatList
             data={results}
@@ -320,44 +321,42 @@ export default function CreateMealScreen() {
                 placeholder="Nom de l'aliment"
                 value={manualName}
                 onChangeText={setManualName}
-                placeholderTextColor="#888"
+                placeholderTextColor={Colors.muted}
                 maxLength={150}
               />
               <TextInput
-                style={styles.input}
+                style={[styles.input, styles.numericInput]}
                 placeholder="Calories / 100g"
                 value={manualCalories}
                 onChangeText={setManualCalories}
                 keyboardType="numeric"
-                placeholderTextColor="#888"
+                placeholderTextColor={Colors.muted}
                 returnKeyType="next"
                 onSubmitEditing={() => manualProteinRef.current?.focus()}
               />
               <TextInput
                 ref={manualProteinRef}
-                style={styles.input}
+                style={[styles.input, styles.numericInput]}
                 placeholder="Protéines / 100g"
                 value={manualProtein}
                 onChangeText={setManualProtein}
                 keyboardType="numeric"
-                placeholderTextColor="#888"
+                placeholderTextColor={Colors.muted}
                 returnKeyType="next"
                 onSubmitEditing={() => manualWeightRef.current?.focus()}
               />
               <TextInput
                 ref={manualWeightRef}
-                style={styles.input}
+                style={[styles.input, styles.numericInput]}
                 placeholder="Poids de la portion (g)"
                 value={manualWeight}
                 onChangeText={setManualWeight}
                 keyboardType="numeric"
-                placeholderTextColor="#888"
+                placeholderTextColor={Colors.muted}
                 returnKeyType="done"
                 onSubmitEditing={() => Keyboard.dismiss()}
               />
-              <TouchableOpacity style={styles.button} onPress={handleAddManualIngredient}>
-                <Text style={styles.buttonText}>Ajouter au repas</Text>
-              </TouchableOpacity>
+              <IronButton label="Ajouter au repas" onPress={handleAddManualIngredient} />
             </View>
           ) : null}
         </>
@@ -376,36 +375,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 24,
     gap: 10,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 22,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
+  },
+  numericInput: {
+    fontFamily: FontFamily.mono,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
   row: {
     flexDirection: "row",
@@ -415,116 +412,143 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cancelButton: {
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 14,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
+    justifyContent: "center",
   },
   cancelButtonText: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
+    color: Colors.ink,
   },
   searchRow: {
     flexDirection: "row",
     gap: 8,
   },
   searchButton: {
-    backgroundColor: "#000",
-    borderRadius: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: Radius,
     paddingHorizontal: 16,
     justifyContent: "center",
   },
   searchButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodyBold,
+    color: Colors.bg,
     fontSize: 13,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   scanButton: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
   },
   scanButtonText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    fontWeight: "600",
+    color: Colors.ink,
   },
   resultCard: {
-    backgroundColor: "#f2f2f2",
-    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
   },
   resultName: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    fontWeight: "600",
+    color: Colors.ink,
   },
   resultMeta: {
+    fontFamily: FontFamily.mono,
     fontSize: 12,
-    color: "#666",
+    color: Colors.muted,
     marginTop: 2,
   },
   selectedCard: {
-    backgroundColor: "#f2f2f2",
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderLeftWidth: AccentBorderWidth,
+    borderLeftColor: Colors.accent,
+    borderRadius: Radius,
     padding: 14,
     gap: 10,
   },
   selectedName: {
+    fontFamily: FontFamily.bodyBold,
     fontSize: 16,
-    fontWeight: "700",
+    color: Colors.ink,
   },
   selectedMeta: {
+    fontFamily: FontFamily.mono,
     fontSize: 13,
-    color: "#666",
+    color: Colors.muted,
   },
   manualToggle: {
     marginTop: 8,
     alignItems: "center",
   },
   manualToggleText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: "#0066cc",
-    fontWeight: "600",
+    color: Colors.accent,
   },
   manualForm: {
     gap: 8,
     marginTop: 8,
   },
   addedList: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
     gap: 4,
   },
   addedItem: {
+    fontFamily: FontFamily.mono,
     fontSize: 13,
-    color: "#333",
+    color: Colors.muted,
   },
   camera: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: Radius,
   },
   cancelScanButton: {
-    backgroundColor: "#cc0000",
+    backgroundColor: Colors.accent,
     padding: 14,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
     marginTop: 12,
   },
   cancelScanButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodyBold,
+    color: Colors.bg,
+    fontSize: 15,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   finishButton: {
-    backgroundColor: "#0a8a0a",
+    backgroundColor: Colors.flame,
     padding: 14,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
     marginTop: 12,
   },
   finishButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontFamily: FontFamily.bodyBold,
+    color: Colors.bg,
     fontSize: 16,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
 });

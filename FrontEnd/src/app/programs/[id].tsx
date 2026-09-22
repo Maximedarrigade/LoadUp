@@ -4,6 +4,8 @@ import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getProgramById, deleteProgram, deleteProgramExercise } from "@/api/programs";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
 type Exercise = {
   id: string;
@@ -11,7 +13,7 @@ type Exercise = {
   targetSets: number;
   targetReps: number;
   restDuration: number;
-  exerciseLibrary: { id: string; gifUrl: string } | null;
+  exerciseLibrary: { id: string; gifUrl: string; bodyParts?: string[] } | null;
 };
 
 type Day = {
@@ -74,7 +76,7 @@ export default function ProgramDetailScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -82,7 +84,7 @@ export default function ProgramDetailScreen() {
   if (!program) {
     return (
       <View style={styles.center}>
-        <Text>Programme introuvable.</Text>
+        <Text style={styles.emptyText}>Programme introuvable.</Text>
       </View>
     );
   }
@@ -126,14 +128,14 @@ export default function ProgramDetailScreen() {
               })
             }
           >
-            <Ionicons name="pencil" size={20} color="#333" />
+            <Ionicons name="pencil" size={20} color={Colors.ink} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => setConfirmingDelete(true)}
           >
-            <Ionicons name="trash" size={20} color="#cc0000" />
+            <Ionicons name="trash" size={20} color={Colors.accent} />
           </TouchableOpacity>
         </View>
       )}
@@ -150,15 +152,16 @@ export default function ProgramDetailScreen() {
       <FlatList
         data={program.days}
         keyExtractor={(day) => day.id}
-        contentContainerStyle={{ gap: 20, marginTop: 20 }}
+        contentContainerStyle={{ gap: 24, marginTop: 24, paddingBottom: 40 }}
         ListEmptyComponent={
-          <Text style={styles.empty}>Aucun jour dans ce programme.</Text>
+          <Text style={styles.emptyText}>Aucun jour dans ce programme.</Text>
         }
         renderItem={({ item: day }) => (
           <View>
             <Text style={styles.dayTitle}>{day.name}</Text>
 
-            <TouchableOpacity
+            <IronButton
+              label="▶ Démarrer"
               style={styles.startDayButton}
               onPress={() =>
                 router.push({
@@ -173,14 +176,14 @@ export default function ProgramDetailScreen() {
                         targetSets: e.targetSets,
                         restDuration: e.restDuration,
                         gifUrl: e.exerciseLibrary?.gifUrl ?? null,
+                        libraryId: e.exerciseLibrary?.id ?? null,
+                        bodyParts: e.exerciseLibrary?.bodyParts ?? [],
                       }))
                     ),
                   },
                 })
               }
-            >
-              <Text style={styles.startDayButtonText}>▶ Démarrer</Text>
-            </TouchableOpacity>
+            />
 
             {day.exercises.map((exercise) => (
               <View key={exercise.id} style={styles.exerciseCard}>
@@ -235,13 +238,13 @@ export default function ProgramDetailScreen() {
                             })
                           }
                         >
-                          <Ionicons name="pencil" size={16} color="#333" />
+                          <Ionicons name="pencil" size={16} color={Colors.ink} />
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.iconButtonSmall}
                           onPress={() => setConfirmingExerciseId(exercise.id)}
                         >
-                          <Ionicons name="trash" size={16} color="#cc0000" />
+                          <Ionicons name="trash" size={16} color={Colors.accent} />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -281,20 +284,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 24,
+    backgroundColor: Colors.bg,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
   },
   description: {
+    fontFamily: FontFamily.body,
     fontSize: 14,
-    color: "#666",
+    color: Colors.muted,
     marginTop: 4,
   },
   actionsRow: {
@@ -304,19 +312,23 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 10,
-    borderRadius: 8,
-    backgroundColor: "#eee",
+    borderRadius: Radius,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
   },
   confirmBox: {
     marginTop: 16,
     padding: 12,
-    backgroundColor: "#fff0f0",
-    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    borderRadius: Radius,
   },
   confirmText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#cc0000",
+    color: Colors.accent,
   },
   confirmActions: {
     flexDirection: "row",
@@ -325,66 +337,70 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
   },
   cancelButtonText: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
+    color: Colors.ink,
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: "#cc0000",
+    backgroundColor: Colors.accent,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
   },
   confirmButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodyBold,
     fontSize: 14,
+    color: Colors.bg,
   },
   addDayButton: {
-    backgroundColor: "#000",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
     marginTop: 16,
   },
   addDayButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.ink,
     fontSize: 14,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   dayTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  startDayButton: {
-    backgroundColor: "#0a8a0a",
-    padding: 10,
-    borderRadius: 8,
-    alignItems: "center",
+    fontFamily: FontFamily.headingSemiBold,
+    fontSize: 19,
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 10,
   },
-  startDayButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
+  startDayButton: {
+    marginBottom: 12,
   },
   exerciseCard: {
-    backgroundColor: "#f2f2f2",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderLeftWidth: AccentBorderWidth,
+    borderLeftColor: Colors.accent,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: Radius,
     marginBottom: 8,
   },
   exerciseHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
+    gap: 10,
   },
   exerciseIcons: {
     flexDirection: "row",
@@ -392,30 +408,34 @@ const styles = StyleSheet.create({
   },
   iconButtonSmall: {
     padding: 6,
-    borderRadius: 6,
-    backgroundColor: "#e5e5e5",
+    borderRadius: Radius,
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
   },
   exerciseName: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    fontWeight: "600",
+    color: Colors.ink,
   },
   exerciseDetails: {
-    fontSize: 13,
-    color: "#666",
+    fontFamily: FontFamily.mono,
+    fontSize: 12,
+    color: Colors.muted,
     marginTop: 2,
   },
   progressLink: {
-    marginTop: 8,
+    marginTop: 10,
   },
   progressLinkText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: "#0066cc",
-    fontWeight: "600",
+    color: Colors.accent,
   },
   confirmTextSmall: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    fontWeight: "600",
-    color: "#cc0000",
+    color: Colors.accent,
   },
   confirmActionsSmall: {
     flexDirection: "row",
@@ -424,32 +444,38 @@ const styles = StyleSheet.create({
   },
   cancelButtonSmall: {
     flex: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 8,
-    borderRadius: 6,
+    borderRadius: Radius,
     alignItems: "center",
   },
   confirmButtonSmall: {
     flex: 1,
-    backgroundColor: "#cc0000",
+    backgroundColor: Colors.accent,
     padding: 8,
-    borderRadius: 6,
+    borderRadius: Radius,
     alignItems: "center",
   },
   addExerciseButton: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
     marginTop: 4,
   },
   addExerciseButtonText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    fontWeight: "600",
+    color: Colors.ink,
   },
-  empty: {
+  emptyText: {
+    fontFamily: FontFamily.body,
     textAlign: "center",
-    color: "#999",
+    color: Colors.muted,
     marginTop: 20,
   },
 });

@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import { router } from "expo-router";
 import { login } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -32,7 +34,7 @@ export default function LoginScreen() {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
       />
 
       <TextInput
@@ -41,15 +43,13 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={72}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Se connecter</Text>
-      </TouchableOpacity>
+      <IronButton label="Se connecter" onPress={handleLogin} style={{ marginTop: 12 }} />
 
       <TouchableOpacity onPress={() => router.push("/register")}>
         <Text style={styles.linkText}>Pas encore de compte ? S'inscrire</Text>
@@ -68,40 +68,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
+    fontFamily: FontFamily.headingBold,
+    fontSize: 36,
+    textTransform: "uppercase",
     textAlign: "center",
+    color: Colors.ink,
     marginBottom: 24,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
   linkText: {
+    fontFamily: FontFamily.bodyMedium,
     textAlign: "center",
-    color: "#0066cc",
+    color: Colors.accent,
     marginTop: 16,
     fontSize: 14,
   },

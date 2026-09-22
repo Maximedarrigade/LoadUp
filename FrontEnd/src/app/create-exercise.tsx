@@ -6,6 +6,8 @@ import { createProgramExercise } from "@/api/programs";
 import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function CreateExerciseScreen() {
   const { dayId } = useLocalSearchParams<{ dayId: string }>();
@@ -82,7 +84,7 @@ export default function CreateExerciseScreen() {
           placeholder="Nom de l'exercice"
           value={name}
           onChangeText={setName}
-          placeholderTextColor="#888"
+          placeholderTextColor={Colors.muted}
           maxLength={100}
         />
       ) : (
@@ -93,7 +95,7 @@ export default function CreateExerciseScreen() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.gifButton} onPress={openCatalog}>
-            <Ionicons name="images" size={22} color="#fff" />
+            <Ionicons name="images" size={22} color={Colors.bg} />
           </TouchableOpacity>
         </View>
       )}
@@ -118,43 +120,41 @@ export default function CreateExerciseScreen() {
       </TouchableOpacity>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.numericInput]}
         placeholder="Nombre de séries"
         value={sets}
         onChangeText={setSets}
         keyboardType="numeric"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         returnKeyType="next"
         onSubmitEditing={() => repsInputRef.current?.focus()}
       />
       <TextInput
         ref={repsInputRef}
-        style={styles.input}
+        style={[styles.input, styles.numericInput]}
         placeholder="Nombre de répétitions"
         value={reps}
         onChangeText={setReps}
         keyboardType="numeric"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         returnKeyType="next"
         onSubmitEditing={() => restInputRef.current?.focus()}
       />
       <TextInput
         ref={restInputRef}
-        style={styles.input}
+        style={[styles.input, styles.numericInput]}
         placeholder="Durée de pause (secondes)"
         value={rest}
         onChangeText={setRest}
         keyboardType="numeric"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         returnKeyType="done"
         onSubmitEditing={() => Keyboard.dismiss()}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Ajouter l'exercice</Text>
-      </TouchableOpacity>
+      <IronButton label="Ajouter l'exercice" onPress={handleSubmit} style={{ marginTop: 12 }} />
     </DismissKeyboardView>
   );
 }
@@ -163,21 +163,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 40,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 24,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
+  },
+  numericInput: {
+    fontFamily: FontFamily.mono,
   },
   pickerRow: {
     flexDirection: "row",
@@ -188,52 +196,46 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gifButton: {
-    backgroundColor: "#000",
-    borderRadius: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: Radius,
     width: 48,
     alignItems: "center",
     justifyContent: "center",
   },
   pickerPlaceholder: {
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#888",
+    color: Colors.muted,
   },
   pickerValue: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
   },
   manualLink: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: "#0066cc",
-    fontWeight: "600",
+    color: Colors.accent,
   },
   libraryBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 8,
   },
   libraryBadgeText: {
+    fontFamily: FontFamily.body,
     fontSize: 13,
-    color: "#666",
+    color: Colors.muted,
     flex: 1,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Modal } from "react-na
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
+import { Colors, FontFamily, Radius } from "@/theme";
 import wordmark from "@/assets/images/white_c_wordmark.png";
 
 export default function AppHeader() {
@@ -33,7 +34,7 @@ export default function AppHeader() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => setMenuOpen(true)}>
-        <Ionicons name="menu" size={28} color="#fff" />
+        <Ionicons name="menu" size={28} color={Colors.ink} />
       </TouchableOpacity>
 
       <Modal visible={menuOpen} transparent animationType="fade">
@@ -81,7 +82,9 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 20,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: Colors.surface2,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -92,19 +95,21 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   menu: {
     position: "absolute",
     top: 95,
     right: 20,
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius,
+    borderWidth: 1,
+    borderColor: Colors.line,
     paddingVertical: 6,
     minWidth: 180,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 5,
   },
@@ -113,10 +118,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   menuItemText: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 15,
-    fontWeight: "500",
+    color: Colors.ink,
   },
   logoutText: {
-    color: "#cc0000",
+    color: Colors.accent,
   },
 });

@@ -6,6 +6,8 @@ import { useAuthStore } from "@/store/authStore";
 import { getPrograms, deleteProgram } from "@/api/programs";
 import { getStreak } from "@/api/streak";
 import StreakBadge from "@/components/StreakBadge";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
 type Program = {
   id: string;
@@ -72,28 +74,26 @@ export default function HomeScreen() {
   if (!isHydrated || loadingPrograms) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push("/create-program")}
-      >
-        <Text style={styles.addButtonText}>+ Nouveau programme</Text>
-      </TouchableOpacity>
-
+    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
       <View style={styles.container}>
         <Text style={styles.title}>Bonjour {user?.name}</Text>
         <StreakBadge currentStreak={currentStreak} />
 
+        <View style={styles.sectionLabelRow}>
+          <Text style={styles.sectionLabel}>Mes programmes</Text>
+          <View style={styles.sectionLine} />
+        </View>
+
         <FlatList
           data={programs}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ gap: 12 }}
+          contentContainerStyle={{ gap: 12, paddingBottom: 90 }}
           ListEmptyComponent={
             <Text style={styles.empty}>Aucun programme pour l'instant.</Text>
           }
@@ -142,14 +142,14 @@ export default function HomeScreen() {
                         })
                       }
                     >
-                      <Ionicons name="pencil" size={18} color="#333" />
+                      <Ionicons name="pencil" size={18} color={Colors.ink} />
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       style={styles.iconButton}
                       onPress={() => setConfirmingId(item.id)}
                     >
-                      <Ionicons name="trash" size={18} color="#cc0000" />
+                      <Ionicons name="trash" size={18} color={Colors.accent} />
                     </TouchableOpacity>
                   </View>
                 </>
@@ -157,6 +157,10 @@ export default function HomeScreen() {
             </View>
           )}
         />
+      </View>
+
+      <View style={styles.addButtonWrap}>
+        <IronButton label="+ Nouveau programme" onPress={() => router.push("/create-program")} />
       </View>
     </View>
   );
@@ -166,42 +170,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    paddingTop: 24,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: Colors.bg,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+    fontFamily: FontFamily.headingBold,
+    fontSize: 28,
+    textTransform: "uppercase",
+    color: Colors.ink,
+    marginBottom: 14,
   },
-  addButton: {
-    backgroundColor: "#000",
-    padding: 12,
-    borderRadius: 8,
+  sectionLabelRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 20,
-    marginTop: 12,
+    gap: 10,
+    marginBottom: 12,
   },
-  addButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
+  sectionLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: Colors.muted,
+  },
+  sectionLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.line,
+  },
+  addButtonWrap: {
+    padding: 20,
+    paddingTop: 0,
+    backgroundColor: Colors.bg,
   },
   card: {
-    backgroundColor: "#f2f2f2",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderLeftWidth: AccentBorderWidth,
+    borderLeftColor: Colors.accent,
+    borderRadius: Radius,
     padding: 16,
-    borderRadius: 12,
   },
   cardTitle: {
+    fontFamily: FontFamily.headingSemiBold,
     fontSize: 18,
-    fontWeight: "600",
+    textTransform: "uppercase",
+    color: Colors.ink,
   },
   cardDescription: {
+    fontFamily: FontFamily.body,
     fontSize: 14,
-    color: "#666",
+    color: Colors.muted,
     marginTop: 4,
   },
   cardActions: {
@@ -212,13 +237,15 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8,
-    borderRadius: 6,
-    backgroundColor: "#eee",
+    borderRadius: Radius,
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
   },
   confirmText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#cc0000",
+    color: Colors.accent,
   },
   confirmActions: {
     flexDirection: "row",
@@ -227,30 +254,34 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
   },
   cancelButtonText: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
+    color: Colors.ink,
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: "#cc0000",
+    backgroundColor: Colors.accent,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
   },
   confirmButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodyBold,
     fontSize: 14,
+    color: Colors.bg,
   },
   empty: {
+    fontFamily: FontFamily.body,
     textAlign: "center",
-    color: "#999",
+    color: Colors.muted,
     marginTop: 40,
   },
 });

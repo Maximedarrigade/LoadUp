@@ -2,6 +2,8 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { forgotPassword } from "@/api/auth";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -39,15 +41,13 @@ export default function ForgotPasswordScreen() {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {message ? <Text style={styles.success}>{message}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Envoyer le lien</Text>
-      </TouchableOpacity>
+      <IronButton label="Envoyer le lien" onPress={handleSubmit} style={{ marginTop: 12 }} />
 
       <TouchableOpacity onPress={() => router.push("/login")}>
         <Text style={styles.linkText}>Retour à la connexion</Text>
@@ -62,50 +62,46 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    fontWeight: "bold",
+    textTransform: "uppercase",
     textAlign: "center",
+    color: Colors.ink,
   },
   subtitle: {
+    fontFamily: FontFamily.body,
     fontSize: 14,
-    color: "#666",
+    color: Colors.muted,
     textAlign: "center",
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
   },
   success: {
-    color: "#0a8a0a",
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.flame,
     textAlign: "center",
-    fontWeight: "600",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
   linkText: {
+    fontFamily: FontFamily.bodyMedium,
     textAlign: "center",
-    color: "#0066cc",
+    color: Colors.accent,
     marginTop: 16,
     fontSize: 14,
   },

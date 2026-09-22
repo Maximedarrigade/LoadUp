@@ -14,12 +14,15 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#141311" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="LoadUp" />
 
         <ScrollViewStyleReset />
+
+        {/* Évite un flash blanc avant l'hydratation de l'app (thème Iron Log = fond sombre fixe). */}
+        <style dangerouslySetInnerHTML={{ __html: `html, body { background-color: #141311; }` }} />
       </head>
       <body>{children}</body>
     </html>

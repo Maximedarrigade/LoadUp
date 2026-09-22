@@ -16,6 +16,7 @@ import {
 } from "@/api/exerciseLibrary";
 import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 // La liste n'affiche que des miniatures statiques (quelques Ko) : un GIF animé pèse
 // ~2 Mo décodé, et en monter des dizaines pendant le scroll saturait Safari iOS.
@@ -123,7 +124,7 @@ export default function ExerciseLibraryScreen() {
         placeholder="Rechercher un exercice..."
         value={search}
         onChangeText={setSearch}
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
       />
 
       <View style={styles.filtersWrap}>
@@ -147,7 +148,7 @@ export default function ExerciseLibraryScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+        <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 20 }} />
       ) : (
         <FlatList
           data={exercises}
@@ -156,7 +157,9 @@ export default function ExerciseLibraryScreen() {
           onEndReachedThreshold={0.4}
           onEndReached={handleLoadMore}
           ListEmptyComponent={<Text style={styles.empty}>Aucun exercice trouvé.</Text>}
-          ListFooterComponent={loadingMore ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator color={Colors.accent} style={{ marginTop: 12 }} /> : null
+          }
           initialNumToRender={10}
           maxToRenderPerBatch={8}
           windowSize={5}
@@ -172,20 +175,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 24,
+    backgroundColor: Colors.bg,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: FontFamily.headingBold,
+    fontSize: 22,
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 12,
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   filtersWrap: {
     flexDirection: "row",
@@ -194,47 +202,55 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   filterChip: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 20,
+    borderRadius: Radius,
     justifyContent: "center",
     alignItems: "center",
   },
   filterChipActive: {
-    backgroundColor: "#000",
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
   },
   filterChipText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    fontWeight: "600",
-    color: "#333",
+    color: Colors.ink,
     textTransform: "capitalize",
   },
   filterChipTextActive: {
-    color: "#fff",
+    color: Colors.bg,
   },
   card: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 10,
   },
   cardName: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    fontWeight: "600",
+    color: Colors.ink,
     textTransform: "capitalize",
   },
   cardMeta: {
+    fontFamily: FontFamily.body,
     fontSize: 12,
-    color: "#666",
+    color: Colors.muted,
     marginTop: 2,
     textTransform: "capitalize",
   },
   empty: {
+    fontFamily: FontFamily.body,
     textAlign: "center",
-    color: "#999",
+    color: Colors.muted,
     marginTop: 20,
   },
 });

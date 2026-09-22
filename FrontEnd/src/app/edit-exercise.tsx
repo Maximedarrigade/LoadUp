@@ -1,8 +1,10 @@
 import { useRef, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from "react-native";
+import { View, Text, TextInput, Keyboard, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { updateProgramExercise } from "@/api/programs";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function EditExerciseScreen() {
   const { exerciseId, currentName, currentSets, currentReps, currentRest } =
@@ -50,41 +52,41 @@ export default function EditExerciseScreen() {
         placeholder="Nom de l'exercice"
         value={name}
         onChangeText={setName}
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={100}
       />
       <View style={styles.row}>
         <TextInput
-          style={[styles.input, styles.smallInput]}
+          style={[styles.input, styles.smallInput, styles.numericInput]}
           placeholder="Séries"
           value={sets}
           onChangeText={setSets}
           keyboardType="numeric"
           maxLength={2}
-          placeholderTextColor="#888"
+          placeholderTextColor={Colors.muted}
           returnKeyType="next"
           onSubmitEditing={() => repsInputRef.current?.focus()}
         />
         <TextInput
           ref={repsInputRef}
-          style={[styles.input, styles.smallInput]}
+          style={[styles.input, styles.smallInput, styles.numericInput]}
           placeholder="Reps"
           value={reps}
           onChangeText={setReps}
           keyboardType="numeric"
           maxLength={2}
-          placeholderTextColor="#888"
+          placeholderTextColor={Colors.muted}
           returnKeyType="next"
           onSubmitEditing={() => restInputRef.current?.focus()}
         />
         <TextInput
           ref={restInputRef}
-          style={[styles.input, styles.smallInput]}
+          style={[styles.input, styles.smallInput, styles.numericInput]}
           placeholder="Pause (s)"
           value={rest}
           onChangeText={setRest}
           keyboardType="numeric"
-          placeholderTextColor="#888"
+          placeholderTextColor={Colors.muted}
           returnKeyType="done"
           onSubmitEditing={() => Keyboard.dismiss()}
         />
@@ -92,9 +94,11 @@ export default function EditExerciseScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Enregistrer les modifications</Text>
-      </TouchableOpacity>
+      <IronButton
+        label="Enregistrer les modifications"
+        onPress={handleSubmit}
+        style={{ marginTop: 12 }}
+      />
     </DismissKeyboardView>
   );
 }
@@ -103,21 +107,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 40,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 24,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
+  },
+  numericInput: {
+    fontFamily: FontFamily.mono,
   },
   row: {
     flexDirection: "row",
@@ -129,19 +141,8 @@ const styles = StyleSheet.create({
     flex: 0,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

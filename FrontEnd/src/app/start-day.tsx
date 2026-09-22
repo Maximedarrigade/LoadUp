@@ -1,29 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { getStreak } from "@/api/streak";
+import { getWorkoutLogs } from "@/api/workouts";
 import StreakBadge from "@/components/StreakBadge";
+import IronButton from "@/components/IronButton";
+import ExerciseThumbnail from "@/components/ExerciseThumbnail";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 type QueueExercise = {
   id: string;
   name: string;
   targetSets: number;
   restDuration: number;
+  gifUrl?: string | null;
+  libraryId?: string | null;
+  bodyParts?: string[];
 };
 
-const MESSAGES = [
-  "C'est le moment de tout donner",
-  "Aujourd'hui, on repousse ses limites",
-  "Prêt à devenir plus fort qu'hier ?",
-  "Chaque série te rapproche de ton objectif",
-  "Deviens fier de toi.",
-  "Prouve-toi que tu en es capable.",
-  "Chaque séance te rend plus fort.",
-  "Personne ne le fera à ta place.",
-  "Aujourd'hui, tu gagnes contre toi-même.",
-  "Ta fierté se construit maintenant.",
-  "Ce que tu fais aujourd'hui te définit.",
-];
+type LastPerformance = { weightUsed: number; repsDone: number } | null;
+
+// Estimation grossière : ~2 à 2,5 min par série (échauffement + exécution + repos).
+const MINUTES_PER_SET = 2.25;
+
+function formatWeight(weight: number) {
+  return Number.isInteger(weight) ? String(weight) : weight.toFixed(1).replace(".", ",");
+}
 
 export default function StartDayScreen() {
   const { programId, dayName, exercisesQueue } = useLocalSearchParams<{
@@ -32,15 +35,47 @@ export default function StartDayScreen() {
     exercisesQueue: string;
   }>();
 
-  const queue: QueueExercise[] = JSON.parse(exercisesQueue || "[]");
-  const message = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+  const queue: QueueExercise[] = useMemo(() => JSON.parse(exercisesQueue || "[]"), [exercisesQueue]);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [lastPerformances, setLastPerformances] = useState<Record<string, LastPerformance>>({});
 
   useEffect(() => {
     getStreak()
       .then((data) => setCurrentStreak(data.currentStreak))
       .catch((error) => console.error(error));
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.allSettled(queue.map((exercise) => getWorkoutLogs(exercise.id))).then((results) => {
+      if (cancelled) return;
+      const next: Record<string, LastPerformance> = {};
+      results.forEach((result, index) => {
+        const exerciseId = queue[index].id;
+        if (result.status === "fulfilled" && result.value.length > 0) {
+          const [latest] = result.value;
+          next[exerciseId] = { weightUsed: latest.weightUsed, repsDone: latest.repsDone };
+        } else {
+          next[exerciseId] = null;
+        }
+      });
+      setLastPerformances(next);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [exercisesQueue]);
+
+  const totalSets = queue.reduce((sum, exercise) => sum + exercise.targetSets, 0);
+  const estimatedMinutes = Math.max(1, Math.round(totalSets * MINUTES_PER_SET));
+
+  const muscleGroups = useMemo(() => {
+    const groups = new Set<string>();
+    queue.forEach((exercise) => exercise.bodyParts?.forEach((part) => groups.add(part)));
+    return Array.from(groups).join(" · ");
+  }, [queue]);
 
   function handleStart() {
     router.replace({
@@ -53,30 +88,84 @@ export default function StartDayScreen() {
     });
   }
 
+  function handleClose() {
+    router.back();
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.dayName}>{dayName}</Text>
-      <Text style={styles.message}>{message}</Text>
-      <StreakBadge currentStreak={currentStreak} />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.closeButton} onPress={handleClose} hitSlop={12}>
+          <Ionicons name="close" size={24} color={Colors.muted} />
+        </TouchableOpacity>
 
-      <Text style={styles.listTitle}>Au programme aujourd'hui :</Text>
+        <Text style={styles.dayName}>{dayName}</Text>
+        {muscleGroups ? (
+          <Text style={styles.muscleGroups} numberOfLines={1}>
+            {muscleGroups}
+          </Text>
+        ) : null}
+
+        <StreakBadge currentStreak={currentStreak} />
+      </View>
+
+      <View style={styles.statsRow}>
+        <View style={styles.statTile}>
+          <Text style={styles.statValue}>{queue.length}</Text>
+          <Text style={styles.statLabel}>Exercices</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statTile}>
+          <Text style={styles.statValue}>{totalSets}</Text>
+          <Text style={styles.statLabel}>Séries</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statTile}>
+          <Text style={styles.statValue}>~{estimatedMinutes}</Text>
+          <Text style={styles.statLabel}>Min</Text>
+        </View>
+      </View>
+
+      <View style={styles.sectionLabelRow}>
+        <Text style={styles.sectionLabel}>Au programme</Text>
+        <View style={styles.sectionLine} />
+      </View>
 
       <FlatList
         data={queue}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 8 }}
-        renderItem={({ item, index }) => (
-          <View style={styles.exerciseRow}>
-            <Text style={styles.exerciseIndex}>{index + 1}.</Text>
-            <Text style={styles.exerciseText}>{item.name}</Text>
-            <Text style={styles.exerciseSets}>{item.targetSets} séries</Text>
-          </View>
-        )}
+        contentContainerStyle={{ gap: 10, paddingBottom: 20 }}
+        style={{ flex: 1 }}
+        renderItem={({ item, index }) => {
+          const lastPerf = lastPerformances[item.id];
+          return (
+            <View style={styles.exerciseRow}>
+              <Text style={styles.exerciseIndex}>{index + 1}</Text>
+              <ExerciseThumbnail exerciseId={item.libraryId} gifUrl={item.gifUrl} size={48} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.exerciseName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.exerciseLastPerf}>
+                  {lastPerf
+                    ? `Dernière fois — ${formatWeight(lastPerf.weightUsed)} kg × ${lastPerf.repsDone}`
+                    : lastPerf === null
+                    ? "Pas encore de séance enregistrée"
+                    : "…"}
+                </Text>
+              </View>
+              <Text style={styles.exerciseSets}>{item.targetSets}×</Text>
+            </View>
+          );
+        }}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleStart}>
-        <Text style={styles.buttonText}>Lets gooooooooo !</Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <IronButton label="Commencer la séance" onPress={handleStart} />
+        <TouchableOpacity onPress={handleClose} style={styles.cancelLink}>
+          <Text style={styles.cancelLinkText}>Annuler</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -84,56 +173,140 @@ export default function StartDayScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    paddingTop: 60,
-    gap: 16,
+    backgroundColor: Colors.bg,
+  },
+  header: {
+    backgroundColor: Colors.surface2,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+    padding: 20,
+    paddingTop: 24,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 20,
+    right: 16,
+    zIndex: 1,
+    padding: 4,
   },
   dayName: {
-    fontSize: 28,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontFamily: FontFamily.headingBold,
+    fontSize: 30,
+    textTransform: "uppercase",
+    color: Colors.ink,
+    paddingRight: 36,
   },
-  message: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
+  muscleGroups: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: 20,
+    marginBottom: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
+    paddingVertical: 14,
+  },
+  statTile: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: Colors.line,
+  },
+  statValue: {
+    fontFamily: FontFamily.monoBold,
+    fontSize: 22,
+    color: Colors.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  statLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: Colors.muted,
+  },
+  sectionLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginHorizontal: 20,
     marginBottom: 12,
   },
-  listTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+  sectionLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: Colors.muted,
+  },
+  sectionLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.line,
   },
   exerciseRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#f2f2f2",
-    padding: 12,
-    borderRadius: 10,
+    gap: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
+    padding: 10,
+    marginHorizontal: 20,
   },
   exerciseIndex: {
-    fontWeight: "bold",
-    color: "#999",
+    fontFamily: FontFamily.mono,
+    fontSize: 13,
+    color: Colors.muted,
+    width: 16,
+    textAlign: "center",
   },
-  exerciseText: {
-    flex: 1,
+  exerciseName: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    fontWeight: "600",
+    color: Colors.ink,
+  },
+  exerciseLastPerf: {
+    fontFamily: FontFamily.mono,
+    fontSize: 12,
+    color: Colors.muted,
+    marginTop: 2,
   },
   exerciseSets: {
-    fontSize: 13,
-    color: "#666",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontFamily: FontFamily.monoBold,
     fontSize: 16,
+    color: Colors.accent,
+    fontVariant: ["tabular-nums"],
+  },
+  footer: {
+    padding: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.line,
+    backgroundColor: Colors.bg,
+  },
+  cancelLink: {
+    alignItems: "center",
+    paddingVertical: 14,
+  },
+  cancelLinkText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.muted,
   },
 });

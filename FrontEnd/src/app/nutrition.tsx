@@ -10,6 +10,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getMealsByDate, deleteMeal, DayMeals } from "@/api/meals";
+import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
 export default function NutritionScreen() {
   const [data, setData] = useState<DayMeals | null>(null);
@@ -46,7 +47,7 @@ export default function NutritionScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -93,7 +94,7 @@ export default function NutritionScreen() {
       <FlatList
         data={data?.meals ?? []}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 12, marginTop: 16 }}
+        contentContainerStyle={{ gap: 12, marginTop: 16, paddingBottom: 20 }}
         ListEmptyComponent={<Text style={styles.empty}>Aucun repas enregistré aujourd'hui.</Text>}
         renderItem={({ item: meal }) => (
           <View style={styles.mealCard}>
@@ -108,7 +109,7 @@ export default function NutritionScreen() {
                 style={styles.iconButton}
                 onPress={() => setConfirmingId(meal.id)}
               >
-                <Ionicons name="trash" size={18} color="#cc0000" />
+                <Ionicons name="trash" size={18} color={Colors.accent} />
               </TouchableOpacity>
             </View>
 
@@ -148,67 +149,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 24,
+    backgroundColor: Colors.bg,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 16,
   },
   summaryCard: {
-    backgroundColor: "#f2f2f2",
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 16,
     gap: 8,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   summaryLabel: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 14,
-    color: "#666",
+    color: Colors.muted,
   },
   summaryValue: {
+    fontFamily: FontFamily.monoBold,
     fontSize: 16,
-    fontWeight: "700",
+    color: Colors.ink,
+    fontVariant: ["tabular-nums"],
   },
   editProfileLink: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: "#0066cc",
-    fontWeight: "600",
+    color: Colors.accent,
     marginTop: 4,
   },
   setupCard: {
-    backgroundColor: "#fff2e6",
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderLeftWidth: AccentBorderWidth,
+    borderLeftColor: Colors.flame,
+    borderRadius: Radius,
     padding: 16,
   },
   setupCardText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#ff7a00",
+    color: Colors.flame,
   },
   addButton: {
-    backgroundColor: "#000",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
     marginTop: 16,
   },
   addButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.ink,
     fontSize: 14,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   mealCard: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderLeftWidth: AccentBorderWidth,
+    borderLeftColor: Colors.accent,
+    borderRadius: Radius,
     padding: 14,
   },
   mealHeader: {
@@ -217,31 +240,36 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   mealName: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    fontWeight: "600",
+    color: Colors.ink,
   },
   mealTotals: {
-    fontSize: 13,
-    color: "#666",
+    fontFamily: FontFamily.mono,
+    fontSize: 12,
+    color: Colors.muted,
     marginTop: 2,
   },
   iconButton: {
     padding: 6,
-    borderRadius: 6,
-    backgroundColor: "#eee",
+    borderRadius: Radius,
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
   },
   ingredientText: {
+    fontFamily: FontFamily.body,
     fontSize: 13,
-    color: "#444",
+    color: Colors.muted,
     marginTop: 6,
   },
   confirmBox: {
     marginTop: 10,
   },
   confirmText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    fontWeight: "600",
-    color: "#cc0000",
+    color: Colors.accent,
   },
   confirmActions: {
     flexDirection: "row",
@@ -250,30 +278,34 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 8,
-    borderRadius: 6,
+    borderRadius: Radius,
     alignItems: "center",
   },
   cancelButtonText: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
+    color: Colors.ink,
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: "#cc0000",
+    backgroundColor: Colors.accent,
     padding: 8,
-    borderRadius: 6,
+    borderRadius: Radius,
     alignItems: "center",
   },
   confirmButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontFamily: FontFamily.bodyBold,
+    color: Colors.bg,
     fontSize: 13,
   },
   empty: {
+    fontFamily: FontFamily.body,
     textAlign: "center",
-    color: "#999",
+    color: Colors.muted,
     marginTop: 20,
   },
 });
