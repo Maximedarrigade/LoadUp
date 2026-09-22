@@ -16,6 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { createProgram, createProgramDay, createProgramExercise } from "@/api/programs";
 import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 type ExerciseForm = {
   name: string;
@@ -193,7 +195,7 @@ export default function CreateProgramScreen() {
         placeholder="Nom du programme"
         value={name}
         onChangeText={setName}
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={100}
       />
       <TextInput
@@ -203,7 +205,7 @@ export default function CreateProgramScreen() {
         onChangeText={setDescription}
         multiline
         numberOfLines={3}
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={500}
       />
 
@@ -215,7 +217,7 @@ export default function CreateProgramScreen() {
               placeholder={`Nom du jour ${dayIndex + 1} (ex: Pecs-Triceps)`}
               value={day.name}
               onChangeText={(value) => updateDayName(dayIndex, value)}
-              placeholderTextColor="#888"
+              placeholderTextColor={Colors.muted}
               maxLength={100}
             />
             {days.length > 1 ? (
@@ -235,7 +237,7 @@ export default function CreateProgramScreen() {
                   onChangeText={(value) =>
                     updateExerciseField(dayIndex, exerciseIndex, "name", value)
                   }
-                  placeholderTextColor="#888"
+                  placeholderTextColor={Colors.muted}
                   maxLength={100}
                 />
               ) : (
@@ -252,7 +254,7 @@ export default function CreateProgramScreen() {
                     style={styles.gifButton}
                     onPress={() => openCatalogFor(dayIndex, exerciseIndex)}
                   >
-                    <Ionicons name="images" size={20} color="#fff" />
+                    <Ionicons name="images" size={20} color={Colors.bg} />
                   </TouchableOpacity>
                 </View>
               )}
@@ -284,7 +286,7 @@ export default function CreateProgramScreen() {
 
               <View style={styles.row}>
                 <TextInput
-                  style={[styles.input, styles.smallInput]}
+                  style={[styles.input, styles.smallInput, styles.numericInput]}
                   placeholder="Séries"
                   value={exercise.sets}
                   onChangeText={(value) =>
@@ -292,12 +294,12 @@ export default function CreateProgramScreen() {
                   }
                   keyboardType="numeric"
                   maxLength={2}
-                  placeholderTextColor="#888"
+                  placeholderTextColor={Colors.muted}
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
                 />
                 <TextInput
-                  style={[styles.input, styles.smallInput]}
+                  style={[styles.input, styles.smallInput, styles.numericInput]}
                   placeholder="Reps"
                   value={exercise.reps}
                   onChangeText={(value) =>
@@ -305,19 +307,19 @@ export default function CreateProgramScreen() {
                   }
                   keyboardType="numeric"
                   maxLength={2}
-                  placeholderTextColor="#888"
+                  placeholderTextColor={Colors.muted}
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
                 />
                 <TextInput
-                  style={[styles.input, styles.smallInput]}
+                  style={[styles.input, styles.smallInput, styles.numericInput]}
                   placeholder="Pause (s)"
                   value={exercise.rest}
                   onChangeText={(value) =>
                     updateExerciseField(dayIndex, exerciseIndex, "rest", value)
                   }
                   keyboardType="numeric"
-                  placeholderTextColor="#888"
+                  placeholderTextColor={Colors.muted}
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
                 />
@@ -345,15 +347,13 @@ export default function CreateProgramScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity
-        style={styles.submitButton}
+      <IronButton
+        label={submitting ? "Création..." : "Créer le programme"}
         onPress={handleSubmit}
         disabled={submitting}
-      >
-        <Text style={styles.submitButtonText}>
-          {submitting ? "Création..." : "Créer le programme"}
-        </Text>
-      </TouchableOpacity>
+        loading={submitting}
+        style={{ marginTop: 16, marginBottom: 40 }}
+      />
     </ScrollView>
     </TouchableWithoutFeedback>
   );
@@ -362,29 +362,39 @@ export default function CreateProgramScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 40,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 24,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
+  },
+  numericInput: {
+    fontFamily: FontFamily.mono,
   },
   textArea: {
     height: 80,
     textAlignVertical: "top",
   },
   dayBlock: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 12,
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
     marginTop: 16,
     gap: 10,
@@ -393,12 +403,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   dayNameInput: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
   },
   exerciseBlock: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radius,
     gap: 8,
   },
   row: {
@@ -419,78 +431,76 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gifButton: {
-    backgroundColor: "#000",
-    borderRadius: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: Radius,
     width: 44,
     alignItems: "center",
     justifyContent: "center",
   },
   pickerPlaceholder: {
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#888",
+    color: Colors.muted,
   },
   pickerValue: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
   },
   libraryBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 8,
+    backgroundColor: Colors.surface2,
+    borderRadius: Radius,
     padding: 6,
   },
   libraryBadgeText: {
+    fontFamily: FontFamily.body,
     fontSize: 12,
-    color: "#666",
+    color: Colors.muted,
     flex: 1,
   },
   manualLink: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
-    color: "#0066cc",
-    fontWeight: "600",
+    color: Colors.accent,
   },
   removeText: {
-    color: "#cc0000",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     fontSize: 13,
   },
   addExerciseButton: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
   },
   addExerciseButtonText: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    fontWeight: "600",
+    color: Colors.ink,
   },
   addDayButton: {
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radius,
     alignItems: "center",
     marginTop: 12,
   },
   addDayButtonText: {
-    fontWeight: "600",
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
+    color: Colors.ink,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  submitButton: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-    marginBottom: 40,
-  },
-  submitButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

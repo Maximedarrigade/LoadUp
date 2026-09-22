@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
+import { Colors, FontFamily } from "@/theme";
 
 export default function AppFooter() {
   return (
@@ -13,12 +14,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: Colors.line,
     alignItems: "center",
-    backgroundColor: "#000",
+    backgroundColor: Colors.surface2,
   },
   text: {
+    fontFamily: FontFamily.body,
     fontSize: 12,
-    color: "#fff",
+    color: Colors.muted,
   },
 });

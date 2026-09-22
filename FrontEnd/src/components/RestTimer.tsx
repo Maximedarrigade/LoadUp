@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 type RestTimerProps = {
   initialSeconds: number;
@@ -109,8 +110,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   time: {
+    fontFamily: FontFamily.monoBold,
     fontSize: 64,
-    fontWeight: "bold",
+    color: Colors.flame,
     fontVariant: ["tabular-nums"],
   },
   row: {
@@ -118,28 +120,34 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   smallButton: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: Radius,
   },
   smallButtonText: {
+    fontFamily: FontFamily.mono,
     fontSize: 14,
-    fontWeight: "600",
+    color: Colors.ink,
   },
   mainButton: {
-    backgroundColor: "#000",
+    backgroundColor: Colors.accent,
     paddingVertical: 14,
     paddingHorizontal: 40,
-    borderRadius: 10,
+    borderRadius: Radius,
   },
   mainButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontFamily: FontFamily.bodyBold,
+    color: Colors.bg,
     fontSize: 16,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   resetText: {
-    color: "#999",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.muted,
     fontSize: 14,
   },
 });

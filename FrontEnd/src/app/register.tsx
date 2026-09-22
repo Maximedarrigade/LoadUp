@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import { router } from "expo-router";
 import { register, login } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
@@ -45,7 +47,7 @@ export default function RegisterScreen() {
         placeholder="Nom"
         value={name}
         onChangeText={setName}
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={50}
       />
 
@@ -56,7 +58,7 @@ export default function RegisterScreen() {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
       />
 
       <TextInput
@@ -65,7 +67,7 @@ export default function RegisterScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={72}
       />
 
@@ -75,15 +77,13 @@ export default function RegisterScreen() {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={72}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>S'inscrire</Text>
-      </TouchableOpacity>
+      <IronButton label="S'inscrire" onPress={handleRegister} style={{ marginTop: 12 }} />
 
       <TouchableOpacity onPress={() => router.push("/login")}>
         <Text style={styles.linkText}>Déjà un compte ? Se connecter</Text>
@@ -98,40 +98,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontFamily: FontFamily.headingBold,
+    fontSize: 30,
+    textTransform: "uppercase",
     textAlign: "center",
+    color: Colors.ink,
     marginBottom: 20,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
   linkText: {
+    fontFamily: FontFamily.bodyMedium,
     textAlign: "center",
-    color: "#0066cc",
+    color: Colors.accent,
     marginTop: 16,
     fontSize: 14,
   },

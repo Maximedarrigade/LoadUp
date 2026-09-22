@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { resetPassword } from "@/api/auth";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function ResetPasswordScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -31,9 +33,7 @@ export default function ResetPasswordScreen() {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Mot de passe modifié ✅</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.replace("/login")}>
-          <Text style={styles.buttonText}>Se connecter</Text>
-        </TouchableOpacity>
+        <IronButton label="Se connecter" onPress={() => router.replace("/login")} />
       </View>
     );
   }
@@ -48,7 +48,7 @@ export default function ResetPasswordScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={72}
       />
       <TextInput
@@ -57,15 +57,13 @@ export default function ResetPasswordScreen() {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
         maxLength={72}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Réinitialiser</Text>
-      </TouchableOpacity>
+      <IronButton label="Réinitialiser" onPress={handleSubmit} style={{ marginTop: 12 }} />
     </View>
   );
 }
@@ -76,35 +74,29 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    fontWeight: "bold",
+    textTransform: "uppercase",
     textAlign: "center",
+    color: Colors.ink,
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

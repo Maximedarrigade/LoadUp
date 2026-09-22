@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getWorkoutLogs } from "@/api/workouts";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 type WorkoutLog = {
   id: string;
@@ -37,7 +38,7 @@ export default function ProgressScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -52,7 +53,13 @@ export default function ProgressScreen() {
 
       {logs.length > 0 ? (
         <View style={styles.summary}>
-          <Text style={styles.summaryText}>
+          <Text
+            style={[
+              styles.summaryText,
+              progressionKg > 0 && styles.summaryPositive,
+              progressionKg < 0 && styles.summaryNegative,
+            ]}
+          >
             {progressionKg > 0
               ? `+${progressionKg} kg depuis le début !`
               : progressionKg < 0
@@ -65,7 +72,7 @@ export default function ProgressScreen() {
       <FlatList
         data={logs}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 10, marginTop: 16 }}
+        contentContainerStyle={{ gap: 10, marginTop: 16, paddingBottom: 20 }}
         ListEmptyComponent={
           <Text style={styles.empty}>Aucune séance enregistrée pour cet exercice.</Text>
         }
@@ -93,45 +100,65 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 24,
+    backgroundColor: Colors.bg,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 24,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
   },
   summary: {
     marginTop: 12,
     padding: 12,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
   },
   summaryText: {
+    fontFamily: FontFamily.monoBold,
     fontSize: 16,
-    fontWeight: "600",
+    color: Colors.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  summaryPositive: {
+    color: Colors.flame,
+  },
+  summaryNegative: {
+    color: Colors.accent,
   },
   logCard: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: Radius,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   logDate: {
+    fontFamily: FontFamily.mono,
     fontSize: 14,
-    color: "#666",
+    color: Colors.muted,
   },
   logDetails: {
+    fontFamily: FontFamily.monoBold,
     fontSize: 14,
-    fontWeight: "600",
+    color: Colors.ink,
+    fontVariant: ["tabular-nums"],
   },
   empty: {
+    fontFamily: FontFamily.body,
     textAlign: "center",
-    color: "#999",
+    color: Colors.muted,
     marginTop: 20,
   },
 });

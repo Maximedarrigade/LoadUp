@@ -5,6 +5,8 @@ import { createWorkoutLog } from "@/api/workouts";
 import RestTimer from "@/components/RestTimer";
 import ExerciseGif from "@/components/ExerciseGif";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 type Phase = "set" | "resting" | "form" | "done";
 
@@ -125,7 +127,7 @@ export default function LogWorkoutScreen() {
   if (!current) {
     return (
       <View style={styles.center}>
-        <Text>Exercice introuvable.</Text>
+        <Text style={styles.exerciseName}>Exercice introuvable.</Text>
       </View>
     );
   }
@@ -141,9 +143,7 @@ export default function LogWorkoutScreen() {
         <Text style={styles.setCounter}>
           Série {currentSet}/{totalSets}
         </Text>
-        <TouchableOpacity style={styles.button} onPress={handleValidateSet}>
-          <Text style={styles.buttonText}>Valider la série</Text>
-        </TouchableOpacity>
+        <IronButton label="Valider la série" onPress={handleValidateSet} />
       </View>
     );
   }
@@ -173,7 +173,7 @@ export default function LogWorkoutScreen() {
           value={weight}
           onChangeText={setWeight}
           keyboardType="numeric"
-          placeholderTextColor="#888"
+          placeholderTextColor={Colors.muted}
           returnKeyType="next"
           onSubmitEditing={() => repsInputRef.current?.focus()}
         />
@@ -184,16 +184,14 @@ export default function LogWorkoutScreen() {
           value={reps}
           onChangeText={setReps}
           keyboardType="numeric"
-          placeholderTextColor="#888"
+          placeholderTextColor={Colors.muted}
           returnKeyType="done"
           onSubmitEditing={() => Keyboard.dismiss()}
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Enregistrer</Text>
-        </TouchableOpacity>
+        <IronButton label="Enregistrer" onPress={handleSubmit} />
       </DismissKeyboardView>
     );
   }
@@ -208,13 +206,9 @@ export default function LogWorkoutScreen() {
       <Text style={styles.exerciseName}>{current.name}</Text>
 
       {isLastExercise ? (
-        <TouchableOpacity style={styles.button} onPress={handleBackToProgram}>
-          <Text style={styles.buttonText}>Retour au programme</Text>
-        </TouchableOpacity>
+        <IronButton label="Retour au programme" onPress={handleBackToProgram} />
       ) : (
-        <TouchableOpacity style={styles.button} onPress={handleNextExercise}>
-          <Text style={styles.buttonText}>Exercice suivant →</Text>
-        </TouchableOpacity>
+        <IronButton label="Exercice suivant →" onPress={handleNextExercise} />
       )}
     </View>
   );
@@ -226,6 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   center: {
     flex: 1,
@@ -233,52 +228,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 24,
     gap: 16,
+    backgroundColor: Colors.bg,
   },
   progressLabel: {
+    fontFamily: FontFamily.mono,
     fontSize: 14,
-    color: "#999",
+    color: Colors.muted,
   },
   exerciseName: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontFamily: FontFamily.headingSemiBold,
+    fontSize: 22,
+    textTransform: "uppercase",
+    color: Colors.ink,
     textAlign: "center",
   },
   setCounter: {
-    fontSize: 32,
-    fontWeight: "bold",
+    fontFamily: FontFamily.monoBold,
+    fontSize: 36,
+    color: Colors.ink,
+    fontVariant: ["tabular-nums"],
   },
   restLabel: {
-    fontSize: 16,
-    color: "#666",
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 15,
+    color: Colors.muted,
   },
   doneTitle: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#0a8a0a",
+    textTransform: "uppercase",
+    color: Colors.flame,
     textAlign: "center",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.mono,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    paddingHorizontal: 40,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

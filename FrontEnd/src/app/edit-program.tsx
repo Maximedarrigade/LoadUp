@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { updateProgram } from "@/api/programs";
+import IronButton from "@/components/IronButton";
+import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function EditProgramScreen() {
   const { id, currentName, currentDescription } = useLocalSearchParams<{
@@ -38,7 +40,7 @@ export default function EditProgramScreen() {
         placeholder="Nom du programme"
         value={name}
         onChangeText={setName}
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
       />
 
       <TextInput
@@ -48,14 +50,16 @@ export default function EditProgramScreen() {
         onChangeText={setDescription}
         multiline
         numberOfLines={4}
-        placeholderTextColor="#888"
+        placeholderTextColor={Colors.muted}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Enregistrer les modifications</Text>
-      </TouchableOpacity>
+      <IronButton
+        label="Enregistrer les modifications"
+        onPress={handleSubmit}
+        style={{ marginTop: 12 }}
+      />
     </View>
   );
 }
@@ -64,40 +68,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 40,
     gap: 12,
+    backgroundColor: Colors.bg,
   },
   title: {
+    fontFamily: FontFamily.headingBold,
     fontSize: 24,
-    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: Colors.ink,
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: Colors.line,
+    borderRadius: Radius,
     padding: 12,
+    fontFamily: FontFamily.body,
     fontSize: 16,
-    color: "#000",
+    color: Colors.ink,
+    backgroundColor: Colors.surface,
   },
   textArea: {
     height: 100,
     textAlignVertical: "top",
   },
   error: {
-    color: "red",
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.accent,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });
