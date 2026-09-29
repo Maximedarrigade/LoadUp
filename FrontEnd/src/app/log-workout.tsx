@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, ScrollView, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import {
   finishWorkoutSession,
@@ -18,6 +18,7 @@ import RestTimer from "@/components/RestTimer";
 import ExerciseGif from "@/components/ExerciseGif";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
 import IronButton from "@/components/IronButton";
+import SessionSetsRecap from "@/components/SessionSetsRecap";
 import { confirmAction } from "@/utils/confirm";
 import { Colors, FontFamily, Radius } from "@/theme";
 
@@ -165,6 +166,23 @@ export default function LogWorkoutScreen() {
     };
   }, [positionKey]);
 
+  function storeSet(saved: WorkoutSet) {
+    setSessionSets((prev) => [
+      ...prev.filter(
+        (set) => !(set.programExerciseId === saved.programExerciseId && set.setIndex === saved.setIndex)
+      ),
+      saved,
+    ]);
+  }
+
+  // Correction d'une série déjà validée : même route que la validation (upsert côté API).
+  // Refusée par l'API une fois la séance terminée.
+  async function handleCorrectSet(exerciseId: string, setIndex: number, weightUsed: number, repsDone: number) {
+    if (!workout) return;
+    const saved = await saveWorkoutSet(workout.sessionId, exerciseId, setIndex, weightUsed, repsDone);
+    storeSet(saved);
+  }
+
   async function handleValidateSet() {
     if (!workout || !current) return;
     setError("");
@@ -187,10 +205,7 @@ export default function LogWorkoutScreen() {
       return;
     }
 
-    setSessionSets((prev) => [
-      ...prev.filter((set) => !(set.programExerciseId === current.id && set.setIndex === saved.setIndex)),
-      saved,
-    ]);
+    storeSet(saved);
 
     const next = nextPosition(workout);
     await saveActiveWorkout(next);
@@ -246,14 +261,19 @@ export default function LogWorkoutScreen() {
     );
   }
 
+  const recap = (
+    <SessionSetsRecap queue={workout.queue} sets={sessionSets} onSave={handleCorrectSet} />
+  );
+
   if (phase === "finish") {
     return (
-      <View style={styles.center}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.doneTitle}>{dayDoneMessage}</Text>
         <Text style={styles.exerciseName}>{workout.dayName}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <IronButton label="Terminer la séance" onPress={handleFinish} loading={finishing} />
-      </View>
+        {recap}
+      </ScrollView>
     );
   }
 
@@ -271,75 +291,95 @@ export default function LogWorkoutScreen() {
 
   if (phase === "resting") {
     return (
-      <View style={styles.center}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <ExerciseGif gifUrl={current.gifUrl} size={100} />
         <Text style={styles.exerciseName}>{current.name}</Text>
         <Text style={styles.restLabel}>
           Pause avant la série {workout.setIndex}/{current.targetSets}
         </Text>
         <RestTimer initialSeconds={current.restDuration || 60} onFinish={() => setPhase("set")} />
-      </View>
+        {recap}
+      </ScrollView>
     );
   }
 
   return (
-    <DismissKeyboardView style={styles.center}>
-      <Text style={styles.progressLabel}>
-        Exercice {workout.exerciseIndex + 1}/{workout.queue.length}
-      </Text>
-      <ExerciseGif gifUrl={current.gifUrl} size={120} />
-      <Text style={styles.exerciseName}>{current.name}</Text>
-      <Text style={styles.setCounter}>
-        Série {workout.setIndex}/{current.targetSets}
-      </Text>
+    <DismissKeyboardView style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <Text style={styles.progressLabel}>
+          Exercice {workout.exerciseIndex + 1}/{workout.queue.length}
+        </Text>
+        <ExerciseGif gifUrl={current.gifUrl} size={120} />
+        <Text style={styles.exerciseName}>{current.name}</Text>
+        <Text style={styles.setCounter}>
+          Série {workout.setIndex}/{current.targetSets}
+        </Text>
 
-      <View style={styles.inputsRow}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Poids (kg)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="0"
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="decimal-pad"
-            placeholderTextColor={Colors.muted}
-            returnKeyType="next"
-            onSubmitEditing={() => repsInputRef.current?.focus()}
-          />
+        <View style={styles.inputsRow}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Poids (kg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="0"
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType="decimal-pad"
+              placeholderTextColor={Colors.muted}
+              returnKeyType="next"
+              onSubmitEditing={() => repsInputRef.current?.focus()}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Répétitions</Text>
+            <TextInput
+              ref={repsInputRef}
+              style={styles.input}
+              placeholder={current.targetReps ? `Obj. ${current.targetReps}` : "0"}
+              value={reps}
+              onChangeText={setReps}
+              keyboardType="number-pad"
+              placeholderTextColor={Colors.muted}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
+          </View>
         </View>
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Répétitions</Text>
-          <TextInput
-            ref={repsInputRef}
-            style={styles.input}
-            placeholder={current.targetReps ? `Obj. ${current.targetReps}` : "0"}
-            value={reps}
-            onChangeText={setReps}
-            keyboardType="number-pad"
-            placeholderTextColor={Colors.muted}
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-        </View>
-      </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <IronButton
-        label="Valider la série"
-        onPress={handleValidateSet}
-        loading={saving}
-        style={styles.fullWidth}
-      />
+        <IronButton
+          label="Valider la série"
+          onPress={handleValidateSet}
+          loading={saving}
+          style={styles.fullWidth}
+        />
 
-      <TouchableOpacity onPress={handleFinishEarly} hitSlop={8}>
-        <Text style={styles.finishEarlyText}>Terminer la séance maintenant</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={handleFinishEarly} hitSlop={8}>
+          <Text style={styles.finishEarlyText}>Terminer la séance maintenant</Text>
+        </TouchableOpacity>
+
+        {recap}
+      </ScrollView>
     </DismissKeyboardView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+    gap: 16,
+  },
   center: {
     flex: 1,
     justifyContent: "center",
