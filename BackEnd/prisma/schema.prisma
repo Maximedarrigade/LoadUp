@@ -21,6 +21,7 @@ model User {
   programs             Program[]
   nutritionProfile     NutritionProfile?
   meals                Meal[]
+  workoutSessions      WorkoutSession[]
 }
 
 model Program {
@@ -41,6 +42,7 @@ model ProgramDay {
   programId String
   program   Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
   exercises ProgramExercise[]
+  sessions  WorkoutSession[]
 }
 
 model ProgramExercise {
@@ -56,6 +58,7 @@ model ProgramExercise {
   exerciseLibraryId String?
   exerciseLibrary   ExerciseLibrary? @relation(fields: [exerciseLibraryId], references: [id], onDelete: SetNull)
   logs              WorkoutLog[]
+  sets              WorkoutSet[]
 }
 
 model ExerciseLibrary {
@@ -82,6 +85,38 @@ model WorkoutLog {
   setsDone          Int
   programExerciseId String
   programExercise   ProgramExercise @relation(fields: [programExerciseId], references: [id], onDelete: Cascade)
+}
+
+// Une séance = un jour de programme démarré. Tant que finishedAt est null, la séance
+// est "en cours" : ses séries peuvent encore être enregistrées ou corrigées.
+model WorkoutSession {
+  id           String       @id @default(uuid())
+  startedAt    DateTime     @default(now())
+  finishedAt   DateTime?
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programDayId String?
+  programDay   ProgramDay?  @relation(fields: [programDayId], references: [id], onDelete: SetNull)
+  sets         WorkoutSet[]
+
+  @@index([userId, finishedAt])
+}
+
+// Une série validée pendant une séance, envoyée à l'API dès sa validation.
+model WorkoutSet {
+  id                String          @id @default(uuid())
+  setIndex          Int
+  weightUsed        Float
+  repsDone          Int
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  sessionId         String
+  session           WorkoutSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  programExerciseId String
+  programExercise   ProgramExercise @relation(fields: [programExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, programExerciseId, setIndex])
+  @@index([programExerciseId])
 }
 
 model NutritionProfile {

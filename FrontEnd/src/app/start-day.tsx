@@ -3,21 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getStreak } from "@/api/streak";
-import { getWorkoutLogs } from "@/api/workouts";
+import { getExerciseHistory, startWorkoutSession } from "@/api/workouts";
+import { saveActiveWorkout, type QueueExercise } from "@/store/activeWorkout";
 import StreakBadge from "@/components/StreakBadge";
 import IronButton from "@/components/IronButton";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 import { Colors, FontFamily, Radius } from "@/theme";
-
-type QueueExercise = {
-  id: string;
-  name: string;
-  targetSets: number;
-  restDuration: number;
-  gifUrl?: string | null;
-  libraryId?: string | null;
-  bodyParts?: string[];
-};
 
 type LastPerformance = { weightUsed: number; repsDone: number } | null;
 
@@ -29,8 +20,9 @@ function formatWeight(weight: number) {
 }
 
 export default function StartDayScreen() {
-  const { programId, dayName, exercisesQueue } = useLocalSearchParams<{
+  const { programId, dayId, dayName, exercisesQueue } = useLocalSearchParams<{
     programId: string;
+    dayId: string;
     dayName: string;
     exercisesQueue: string;
   }>();
@@ -38,6 +30,8 @@ export default function StartDayScreen() {
   const queue: QueueExercise[] = useMemo(() => JSON.parse(exercisesQueue || "[]"), [exercisesQueue]);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [lastPerformances, setLastPerformances] = useState<Record<string, LastPerformance>>({});
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState("");
 
   useEffect(() => {
     getStreak()
@@ -48,7 +42,7 @@ export default function StartDayScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.allSettled(queue.map((exercise) => getWorkoutLogs(exercise.id))).then((results) => {
+    Promise.allSettled(queue.map((exercise) => getExerciseHistory(exercise.id))).then((results) => {
       if (cancelled) return;
       const next: Record<string, LastPerformance> = {};
       results.forEach((result, index) => {
@@ -77,15 +71,26 @@ export default function StartDayScreen() {
     return Array.from(groups).join(" · ");
   }, [queue]);
 
-  function handleStart() {
-    router.replace({
-      pathname: "/log-workout",
-      params: {
+  async function handleStart() {
+    setStartError("");
+    setStarting(true);
+    try {
+      const session = await startWorkoutSession(dayId);
+      await saveActiveWorkout({
+        sessionId: session.id,
         programId,
-        exerciseIndex: "0",
-        exercisesQueue,
-      },
-    });
+        dayId,
+        dayName,
+        queue,
+        exerciseIndex: 0,
+        setIndex: 1,
+      });
+      router.replace("/log-workout");
+    } catch (error) {
+      console.error(error);
+      setStartError("Impossible de démarrer la séance. Vérifie ta connexion.");
+      setStarting(false);
+    }
   }
 
   function handleClose() {
@@ -161,7 +166,13 @@ export default function StartDayScreen() {
       />
 
       <View style={styles.footer}>
-        <IronButton label="Commencer la séance" onPress={handleStart} />
+        {startError ? <Text style={styles.startError}>{startError}</Text> : null}
+        <IronButton
+          label="Commencer la séance"
+          onPress={handleStart}
+          loading={starting}
+          disabled={queue.length === 0}
+        />
         <TouchableOpacity onPress={handleClose} style={styles.cancelLink}>
           <Text style={styles.cancelLinkText}>Annuler</Text>
         </TouchableOpacity>
@@ -299,6 +310,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.line,
     backgroundColor: Colors.bg,
+  },
+  startError: {
+    fontFamily: FontFamily.bodyMedium,
+    color: Colors.danger,
+    textAlign: "center",
+    marginBottom: 10,
   },
   cancelLink: {
     alignItems: "center",

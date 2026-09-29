@@ -168,12 +168,14 @@ export default function ProgramDetailScreen() {
                   pathname: "/start-day",
                   params: {
                     programId: program.id,
+                    dayId: day.id,
                     dayName: day.name,
                     exercisesQueue: JSON.stringify(
                       day.exercises.map((e) => ({
                         id: e.id,
                         name: e.name,
                         targetSets: e.targetSets,
+                        targetReps: e.targetReps,
                         restDuration: e.restDuration,
                         gifUrl: e.exerciseLibrary?.gifUrl ?? null,
                         libraryId: e.exerciseLibrary?.id ?? null,

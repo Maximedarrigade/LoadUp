@@ -5,6 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
 import { getPrograms, deleteProgram } from "@/api/programs";
 import { getStreak } from "@/api/streak";
+import { finishWorkoutSession, getCurrentWorkoutSession } from "@/api/workouts";
+import { clearActiveWorkout, loadActiveWorkout, type ActiveWorkout } from "@/store/activeWorkout";
+import { confirmAction } from "@/utils/confirm";
 import StreakBadge from "@/components/StreakBadge";
 import IronButton from "@/components/IronButton";
 import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
@@ -21,6 +24,7 @@ export default function HomeScreen() {
   const [loadingPrograms, setLoadingPrograms] = useState(true);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
 
   useEffect(() => {
     hydrate();
@@ -52,14 +56,56 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // Séance démarrée mais pas terminée (appli fermée en cours de route) : on propose de la reprendre.
+  const loadActiveWorkoutBanner = useCallback(async () => {
+    const local = await loadActiveWorkout();
+    if (!local) {
+      setActiveWorkout(null);
+      return;
+    }
+    try {
+      const session = await getCurrentWorkoutSession();
+      if (!session || session.id !== local.sessionId) {
+        await clearActiveWorkout();
+        setActiveWorkout(null);
+        return;
+      }
+    } catch (error) {
+      // Hors ligne : on se fie à l'état local et on propose quand même la reprise.
+      console.error(error);
+    }
+    setActiveWorkout(local);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (user) {
         loadPrograms();
         loadStreak();
+        loadActiveWorkoutBanner();
       }
-    }, [user, loadPrograms, loadStreak])
+    }, [user, loadPrograms, loadStreak, loadActiveWorkoutBanner])
   );
+
+  function handleAbandonWorkout() {
+    if (!activeWorkout) return;
+    const { sessionId } = activeWorkout;
+    confirmAction(
+      "Abandonner la séance en cours ?",
+      "Les séries déjà validées restent enregistrées.",
+      async () => {
+        try {
+          await finishWorkoutSession(sessionId);
+        } catch (error) {
+          // Sans réseau, la séance sera clôturée côté API au prochain démarrage de séance.
+          console.error(error);
+        }
+        await clearActiveWorkout();
+        setActiveWorkout(null);
+      },
+      "Abandonner"
+    );
+  }
 
   async function confirmDelete(id: string) {
     try {
@@ -84,6 +130,26 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Bonjour {user?.name}</Text>
         <StreakBadge currentStreak={currentStreak} />
+
+        {activeWorkout ? (
+          <View style={styles.resumeCard}>
+            <Text style={styles.resumeLabel}>Séance en cours</Text>
+            <Text style={styles.cardTitle}>{activeWorkout.dayName}</Text>
+            <Text style={styles.resumeProgress}>
+              {activeWorkout.exerciseIndex >= activeWorkout.queue.length
+                ? "Toutes les séries sont faites"
+                : `Exercice ${activeWorkout.exerciseIndex + 1}/${activeWorkout.queue.length} · Série ${activeWorkout.setIndex}`}
+            </Text>
+            <IronButton
+              label="Reprendre la séance en cours"
+              onPress={() => router.push("/log-workout")}
+              style={styles.resumeButton}
+            />
+            <TouchableOpacity onPress={handleAbandonWorkout} style={styles.resumeAbandon} hitSlop={8}>
+              <Text style={styles.resumeAbandonText}>Abandonner</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>Mes programmes</Text>
@@ -207,6 +273,42 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 0,
     backgroundColor: Colors.bg,
+  },
+  resumeCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderLeftWidth: AccentBorderWidth,
+    borderLeftColor: Colors.flame,
+    borderRadius: Radius,
+    padding: 16,
+    marginBottom: 20,
+  },
+  resumeLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: Colors.flame,
+    marginBottom: 4,
+  },
+  resumeProgress: {
+    fontFamily: FontFamily.mono,
+    fontSize: 13,
+    color: Colors.muted,
+    marginTop: 4,
+  },
+  resumeButton: {
+    marginTop: 14,
+  },
+  resumeAbandon: {
+    alignItems: "center",
+    paddingTop: 12,
+  },
+  resumeAbandonText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.muted,
   },
   card: {
     backgroundColor: Colors.surface,

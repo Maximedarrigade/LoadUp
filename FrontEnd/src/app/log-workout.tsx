@@ -1,22 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { createWorkoutLog } from "@/api/workouts";
+import { router } from "expo-router";
+import {
+  finishWorkoutSession,
+  getCurrentWorkoutSession,
+  getExerciseHistory,
+  saveWorkoutSet,
+  type WorkoutSet,
+} from "@/api/workouts";
+import {
+  clearActiveWorkout,
+  loadActiveWorkout,
+  saveActiveWorkout,
+  type ActiveWorkout,
+} from "@/store/activeWorkout";
 import RestTimer from "@/components/RestTimer";
 import ExerciseGif from "@/components/ExerciseGif";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
 import IronButton from "@/components/IronButton";
+import { confirmAction } from "@/utils/confirm";
 import { Colors, FontFamily, Radius } from "@/theme";
 
-type Phase = "set" | "resting" | "form" | "done";
-
-type QueueExercise = {
-  id: string;
-  name: string;
-  targetSets: number;
-  restDuration: number;
-  gifUrl?: string | null;
-};
+type Phase = "loading" | "missing" | "set" | "resting" | "exerciseDone" | "finish";
 
 const EXERCISE_DONE_MESSAGES = [
   "T'as arraché le matos ou quoi ?!",
@@ -42,27 +47,54 @@ const DAY_DONE_MESSAGES = [
   "Ta douche t'attend, elle a mérité sa pause aussi.",
 ];
 
+function randomItem(items: string[]) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function formatWeight(weight: number) {
+  return Number.isInteger(weight) ? String(weight) : String(weight).replace(".", ",");
+}
+
+function nextPosition(workout: ActiveWorkout): ActiveWorkout {
+  const exercise = workout.queue[workout.exerciseIndex];
+  if (exercise && workout.setIndex < exercise.targetSets) {
+    return { ...workout, setIndex: workout.setIndex + 1 };
+  }
+  return { ...workout, exerciseIndex: workout.exerciseIndex + 1, setIndex: 1 };
+}
+
+function hasSet(sets: WorkoutSet[], exerciseId: string, setIndex: number) {
+  return sets.some((set) => set.programExerciseId === exerciseId && set.setIndex === setIndex);
+}
+
+// Si l'appli a été fermée juste après l'enregistrement d'une série, mais avant la mise à jour
+// de la position locale, on saute les séries que l'API a déjà reçues.
+function skipSavedSets(workout: ActiveWorkout, sets: WorkoutSet[]) {
+  let position = workout;
+  while (
+    position.exerciseIndex < position.queue.length &&
+    hasSet(sets, position.queue[position.exerciseIndex].id, position.setIndex)
+  ) {
+    position = nextPosition(position);
+  }
+  return position;
+}
+
 export default function LogWorkoutScreen() {
-  const { programId, exerciseIndex, exercisesQueue } = useLocalSearchParams<{
-    programId: string;
-    exerciseIndex: string;
-    exercisesQueue: string;
-  }>();
-
-  const queue: QueueExercise[] = JSON.parse(exercisesQueue || "[]");
-  const index = parseInt(exerciseIndex || "0", 10);
-  const current = queue[index];
-
-  const totalSets = current?.targetSets || 1;
-  const rest = current?.restDuration || 60;
-  const isLastExercise = index >= queue.length - 1;
-
-  const [currentSet, setCurrentSet] = useState(1);
-  const [phase, setPhase] = useState<Phase>("set");
+  const [workout, setWorkout] = useState<ActiveWorkout | null>(null);
+  const [sessionSets, setSessionSets] = useState<WorkoutSet[]>([]);
+  const [phase, setPhase] = useState<Phase>("loading");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [doneExerciseName, setDoneExerciseName] = useState("");
   const repsInputRef = useRef<TextInput>(null);
+
+  const current = workout ? workout.queue[workout.exerciseIndex] : undefined;
+  const exerciseDoneMessage = useMemo(() => randomItem(EXERCISE_DONE_MESSAGES), [doneExerciseName]);
+  const dayDoneMessage = useMemo(() => randomItem(DAY_DONE_MESSAGES), []);
 
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
@@ -71,79 +103,168 @@ export default function LogWorkoutScreen() {
   }, []);
 
   useEffect(() => {
-    setCurrentSet(1);
-    setPhase("set");
-    setWeight("");
+    async function restore() {
+      const local = await loadActiveWorkout();
+      if (!local) {
+        setPhase("missing");
+        return;
+      }
+
+      let sets: WorkoutSet[] = [];
+      try {
+        const session = await getCurrentWorkoutSession();
+        if (!session || session.id !== local.sessionId) {
+          // La séance a été terminée (ou remplacée) entre-temps : rien à reprendre.
+          await clearActiveWorkout();
+          setPhase("missing");
+          return;
+        }
+        sets = session.sets;
+      } catch (err) {
+        // Hors ligne : on reprend sur la position locale, l'API rattrapera à la prochaine série.
+        console.error(err);
+      }
+
+      const position = skipSavedSets(local, sets);
+      if (position !== local) await saveActiveWorkout(position);
+
+      setSessionSets(sets);
+      setWorkout(position);
+      setPhase(position.exerciseIndex >= position.queue.length ? "finish" : "set");
+    }
+    restore();
+  }, []);
+
+  // Pré-remplit le poids : celui de la série précédente dans la séance, sinon celui
+  // de la dernière fois sur cet exercice. Les répétitions sont toujours à saisir.
+  const positionKey = workout ? `${workout.exerciseIndex}-${workout.setIndex}` : "";
+  useEffect(() => {
+    if (!workout || !current) return;
     setReps("");
     setError("");
-  }, [current?.id]);
 
-  function handleValidateSet() {
-    if (currentSet < totalSets) {
-      setPhase("resting");
-    } else {
-      setPhase("form");
+    const previousSets = sessionSets
+      .filter((set) => set.programExerciseId === current.id && set.setIndex < workout.setIndex)
+      .sort((a, b) => b.setIndex - a.setIndex);
+    if (previousSets.length > 0) {
+      setWeight(formatWeight(previousSets[0].weightUsed));
+      return;
     }
-  }
 
-  function handleRestFinished() {
-    setCurrentSet((prev) => prev + 1);
-    setPhase("set");
-  }
+    setWeight("");
+    let cancelled = false;
+    getExerciseHistory(current.id)
+      .then(([latest]) => {
+        if (!cancelled && latest) {
+          setWeight((prev) => prev || formatWeight(latest.weightUsed));
+        }
+      })
+      .catch((err) => console.error(err));
+    return () => {
+      cancelled = true;
+    };
+  }, [positionKey]);
 
-  async function handleSubmit() {
+  async function handleValidateSet() {
+    if (!workout || !current) return;
     setError("");
-    const weightNum = parseFloat(weight);
-    const repsNum = parseInt(reps, 10);
 
+    const weightNum = parseFloat(weight.replace(",", "."));
+    const repsNum = parseInt(reps, 10);
     if (isNaN(weightNum) || isNaN(repsNum)) {
       setError("Merci de remplir le poids et les répétitions.");
       return;
     }
 
+    setSaving(true);
+    let saved: WorkoutSet;
     try {
-      await createWorkoutLog(current.id, weightNum, repsNum, totalSets);
-      setPhase("done");
+      saved = await saveWorkoutSet(workout.sessionId, current.id, workout.setIndex, weightNum, repsNum);
     } catch (err) {
-      setError("Erreur lors de l'enregistrement.");
+      console.error(err);
+      setError("Série non enregistrée. Vérifie ta connexion et réessaie.");
+      setSaving(false);
+      return;
+    }
+
+    setSessionSets((prev) => [
+      ...prev.filter((set) => !(set.programExerciseId === current.id && set.setIndex === saved.setIndex)),
+      saved,
+    ]);
+
+    const next = nextPosition(workout);
+    await saveActiveWorkout(next);
+    setWorkout(next);
+    setSaving(false);
+    Keyboard.dismiss();
+
+    if (next.exerciseIndex === workout.exerciseIndex) {
+      setPhase("resting");
+    } else if (next.exerciseIndex >= next.queue.length) {
+      setPhase("finish");
+    } else {
+      setDoneExerciseName(current.name);
+      setPhase("exerciseDone");
     }
   }
 
-  function handleNextExercise() {
-    router.replace({
-      pathname: "/log-workout",
-      params: {
-        programId,
-        exerciseIndex: String(index + 1),
-        exercisesQueue,
-      },
-    });
+  async function handleFinish() {
+    if (!workout) return;
+    setError("");
+    setFinishing(true);
+    try {
+      await finishWorkoutSession(workout.sessionId);
+    } catch (err) {
+      console.error(err);
+      setError("Impossible de terminer la séance. Vérifie ta connexion et réessaie.");
+      setFinishing(false);
+      return;
+    }
+    await clearActiveWorkout();
+    router.replace(`/programs/${workout.programId}`);
   }
 
-  function handleBackToProgram() {
-    router.replace(`/programs/${programId}`);
+  function handleFinishEarly() {
+    confirmAction(
+      "Terminer la séance ?",
+      "Les séries restantes ne seront pas faites. Les séries déjà validées restent enregistrées.",
+      handleFinish,
+      "Terminer"
+    );
   }
 
-  if (!current) {
+  if (phase === "loading") {
+    return <View style={styles.center} />;
+  }
+
+  if (phase === "missing" || !workout) {
     return (
       <View style={styles.center}>
-        <Text style={styles.exerciseName}>Exercice introuvable.</Text>
+        <Text style={styles.exerciseName}>Aucune séance en cours.</Text>
+        <IronButton label="Retour à l'accueil" onPress={() => router.replace("/")} />
       </View>
     );
   }
 
-  if (phase === "set") {
+  if (phase === "finish") {
     return (
       <View style={styles.center}>
-        <Text style={styles.progressLabel}>
-          Exercice {index + 1}/{queue.length}
-        </Text>
-        <ExerciseGif gifUrl={current.gifUrl} size={140} />
-        <Text style={styles.exerciseName}>{current.name}</Text>
-        <Text style={styles.setCounter}>
-          Série {currentSet}/{totalSets}
-        </Text>
-        <IronButton label="Valider la série" onPress={handleValidateSet} />
+        <Text style={styles.doneTitle}>{dayDoneMessage}</Text>
+        <Text style={styles.exerciseName}>{workout.dayName}</Text>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <IronButton label="Terminer la séance" onPress={handleFinish} loading={finishing} />
+      </View>
+    );
+  }
+
+  if (!current) return null;
+
+  if (phase === "exerciseDone") {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.doneTitle}>{exerciseDoneMessage}</Text>
+        <Text style={styles.exerciseName}>{doneExerciseName}</Text>
+        <IronButton label="Exercice suivant →" onPress={() => setPhase("set")} />
       </View>
     );
   }
@@ -154,74 +275,71 @@ export default function LogWorkoutScreen() {
         <ExerciseGif gifUrl={current.gifUrl} size={100} />
         <Text style={styles.exerciseName}>{current.name}</Text>
         <Text style={styles.restLabel}>
-          Pause avant la série {currentSet + 1}/{totalSets}
+          Pause avant la série {workout.setIndex}/{current.targetSets}
         </Text>
-        <RestTimer initialSeconds={rest} onFinish={handleRestFinished} />
+        <RestTimer initialSeconds={current.restDuration || 60} onFinish={() => setPhase("set")} />
       </View>
     );
   }
 
-  if (phase === "form") {
-    return (
-      <DismissKeyboardView style={styles.container}>
-        <Text style={styles.exerciseName}>{current.name}</Text>
-        <Text style={styles.setCounter}>Toutes les séries terminées 💪</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Poids utilisé (kg)"
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="numeric"
-          placeholderTextColor={Colors.muted}
-          returnKeyType="next"
-          onSubmitEditing={() => repsInputRef.current?.focus()}
-        />
-        <TextInput
-          ref={repsInputRef}
-          style={styles.input}
-          placeholder="Répétitions faites (dernière série)"
-          value={reps}
-          onChangeText={setReps}
-          keyboardType="numeric"
-          placeholderTextColor={Colors.muted}
-          returnKeyType="done"
-          onSubmitEditing={() => Keyboard.dismiss()}
-        />
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <IronButton label="Enregistrer" onPress={handleSubmit} />
-      </DismissKeyboardView>
-    );
-  }
-
   return (
-    <View style={styles.center}>
-      <Text style={styles.doneTitle}>
-        {isLastExercise
-          ? DAY_DONE_MESSAGES[Math.floor(Math.random() * DAY_DONE_MESSAGES.length)]
-          : EXERCISE_DONE_MESSAGES[Math.floor(Math.random() * EXERCISE_DONE_MESSAGES.length)]}
+    <DismissKeyboardView style={styles.center}>
+      <Text style={styles.progressLabel}>
+        Exercice {workout.exerciseIndex + 1}/{workout.queue.length}
       </Text>
+      <ExerciseGif gifUrl={current.gifUrl} size={120} />
       <Text style={styles.exerciseName}>{current.name}</Text>
+      <Text style={styles.setCounter}>
+        Série {workout.setIndex}/{current.targetSets}
+      </Text>
 
-      {isLastExercise ? (
-        <IronButton label="Retour au programme" onPress={handleBackToProgram} />
-      ) : (
-        <IronButton label="Exercice suivant →" onPress={handleNextExercise} />
-      )}
-    </View>
+      <View style={styles.inputsRow}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Poids (kg)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="0"
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="decimal-pad"
+            placeholderTextColor={Colors.muted}
+            returnKeyType="next"
+            onSubmitEditing={() => repsInputRef.current?.focus()}
+          />
+        </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Répétitions</Text>
+          <TextInput
+            ref={repsInputRef}
+            style={styles.input}
+            placeholder={current.targetReps ? `Obj. ${current.targetReps}` : "0"}
+            value={reps}
+            onChangeText={setReps}
+            keyboardType="number-pad"
+            placeholderTextColor={Colors.muted}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
+          />
+        </View>
+      </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <IronButton
+        label="Valider la série"
+        onPress={handleValidateSet}
+        loading={saving}
+        style={styles.fullWidth}
+      />
+
+      <TouchableOpacity onPress={handleFinishEarly} hitSlop={8}>
+        <Text style={styles.finishEarlyText}>Terminer la séance maintenant</Text>
+      </TouchableOpacity>
+    </DismissKeyboardView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-    gap: 12,
-    backgroundColor: Colors.bg,
-  },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -260,19 +378,45 @@ const styles = StyleSheet.create({
     color: Colors.flame,
     textAlign: "center",
   },
+  inputsRow: {
+    flexDirection: "row",
+    gap: 12,
+    alignSelf: "stretch",
+  },
+  inputGroup: {
+    flex: 1,
+    gap: 6,
+  },
+  inputLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: Colors.muted,
+  },
   input: {
     borderWidth: 1,
     borderColor: Colors.line,
     borderRadius: Radius,
     padding: 12,
-    fontFamily: FontFamily.mono,
-    fontSize: 16,
+    fontFamily: FontFamily.monoBold,
+    fontSize: 22,
     color: Colors.ink,
     backgroundColor: Colors.surface,
+    textAlign: "center",
+  },
+  fullWidth: {
+    alignSelf: "stretch",
+  },
+  finishEarlyText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.muted,
+    textDecorationLine: "underline",
   },
   error: {
     fontFamily: FontFamily.bodyMedium,
-    color: Colors.accent,
+    color: Colors.danger,
     textAlign: "center",
   },
 });

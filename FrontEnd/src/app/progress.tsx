@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { getWorkoutLogs } from "@/api/workouts";
+import { getExerciseHistory, type ExerciseHistoryEntry } from "@/api/workouts";
 import { Colors, FontFamily, Radius } from "@/theme";
 
-type WorkoutLog = {
-  id: string;
-  date: string;
-  weightUsed: number;
-  repsDone: number;
-  setsDone: number;
-};
+function formatWeight(weight: number) {
+  return Number.isInteger(weight) ? String(weight) : String(weight).replace(".", ",");
+}
+
+// Anciennes entrées (WorkoutLog) : un résumé "poids — séries × reps".
+// Nouvelles séances : le détail série par série.
+function describeEntry(entry: ExerciseHistoryEntry) {
+  if (entry.source === "log") {
+    return `${formatWeight(entry.weightUsed)} kg — ${entry.setsDone} séries × ${entry.repsDone} reps`;
+  }
+  return entry.sets.map((set) => `${formatWeight(set.weightUsed)}×${set.repsDone}`).join(" · ");
+}
 
 export default function ProgressScreen() {
   const { exerciseId, exerciseName } = useLocalSearchParams<{
@@ -18,13 +23,13 @@ export default function ProgressScreen() {
     exerciseName: string;
   }>();
 
-  const [logs, setLogs] = useState<WorkoutLog[]>([]);
+  const [logs, setLogs] = useState<ExerciseHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await getWorkoutLogs(exerciseId);
+        const data = await getExerciseHistory(exerciseId);
         setLogs(data);
       } catch (error) {
         console.error(error);
@@ -85,9 +90,7 @@ export default function ProgressScreen() {
           return (
             <View style={styles.logCard}>
               <Text style={styles.logDate}>{date}</Text>
-              <Text style={styles.logDetails}>
-                {item.weightUsed} kg — {item.setsDone} séries × {item.repsDone} reps
-              </Text>
+              <Text style={styles.logDetails}>{describeEntry(item)}</Text>
             </View>
           );
         }}
@@ -150,6 +153,8 @@ const styles = StyleSheet.create({
     color: Colors.muted,
   },
   logDetails: {
+    flexShrink: 1,
+    textAlign: "right",
     fontFamily: FontFamily.monoBold,
     fontSize: 14,
     color: Colors.ink,

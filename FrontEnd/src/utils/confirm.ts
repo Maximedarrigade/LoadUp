@@ -1,6 +1,11 @@
 import { Platform, Alert } from "react-native";
 
-export function confirmAction(title: string, message: string, onConfirm: () => void) {
+export function confirmAction(
+  title: string,
+  message: string,
+  onConfirm: () => void,
+  confirmLabel = "Supprimer"
+) {
   if (Platform.OS === "web") {
     if (window.confirm(`${title}\n\n${message}`)) {
       onConfirm();
@@ -8,7 +13,7 @@ export function confirmAction(title: string, message: string, onConfirm: () => v
   } else {
     Alert.alert(title, message, [
       { text: "Annuler", style: "cancel" },
-      { text: "Supprimer", style: "destructive", onPress: onConfirm },
+      { text: confirmLabel, style: "destructive", onPress: onConfirm },
     ]);
   }
 }
