@@ -4,7 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
 import { getPrograms, deleteProgram } from "@/api/programs";
-import { getStreak } from "@/api/streak";
+import { getStreak, getWeekSummary, type WeekSummary } from "@/api/streak";
 import { finishWorkoutSession, getCurrentWorkoutSession } from "@/api/workouts";
 import { clearActiveWorkout, loadActiveWorkout, type ActiveWorkout } from "@/store/activeWorkout";
 import { confirmAction } from "@/utils/confirm";
@@ -18,6 +18,13 @@ type Program = {
   description: string | null;
 };
 
+// Volume arrondi au kilo, avec séparateur de milliers : 12450 → "12 450".
+function formatVolume(volume: number) {
+  return Math.round(volume)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F");
+}
+
 export default function HomeScreen() {
   const { user, isHydrated, hydrate } = useAuthStore();
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -25,6 +32,7 @@ export default function HomeScreen() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
+  const [weekSummary, setWeekSummary] = useState<WeekSummary | null>(null);
 
   useEffect(() => {
     hydrate();
@@ -51,6 +59,14 @@ export default function HomeScreen() {
     try {
       const data = await getStreak();
       setCurrentStreak(data.currentStreak);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  const loadWeekSummary = useCallback(async () => {
+    try {
+      setWeekSummary(await getWeekSummary());
     } catch (error) {
       console.error(error);
     }
@@ -83,8 +99,9 @@ export default function HomeScreen() {
         loadPrograms();
         loadStreak();
         loadActiveWorkoutBanner();
+        loadWeekSummary();
       }
-    }, [user, loadPrograms, loadStreak, loadActiveWorkoutBanner])
+    }, [user, loadPrograms, loadStreak, loadActiveWorkoutBanner, loadWeekSummary])
   );
 
   function handleAbandonWorkout() {
@@ -150,6 +167,27 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         ) : null}
+
+        <View style={styles.sectionLabelRow}>
+          <Text style={styles.sectionLabel}>Cette semaine</Text>
+          <View style={styles.sectionLine} />
+        </View>
+
+        <View style={styles.weekRow}>
+          <View style={styles.weekTile}>
+            <Text style={styles.weekValue}>{weekSummary ? weekSummary.sessionCount : "–"}</Text>
+            <Text style={styles.weekLabel}>
+              {weekSummary?.sessionCount === 1 ? "Séance" : "Séances"}
+            </Text>
+          </View>
+          <View style={styles.weekTile}>
+            <Text style={styles.weekValue} numberOfLines={1} adjustsFontSizeToFit>
+              {weekSummary ? formatVolume(weekSummary.totalVolume) : "–"}
+              <Text style={styles.weekUnit}> kg</Text>
+            </Text>
+            <Text style={styles.weekLabel}>Volume soulevé</Text>
+          </View>
+        </View>
 
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>Mes programmes</Text>
@@ -273,6 +311,39 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 0,
     backgroundColor: Colors.bg,
+  },
+  weekRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 20,
+  },
+  weekTile: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  weekValue: {
+    fontFamily: FontFamily.monoBold,
+    fontSize: 26,
+    color: Colors.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  weekUnit: {
+    fontFamily: FontFamily.mono,
+    fontSize: 14,
+    color: Colors.muted,
+  },
+  weekLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: Colors.muted,
   },
   resumeCard: {
     backgroundColor: Colors.surface,
