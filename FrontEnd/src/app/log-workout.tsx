@@ -6,6 +6,7 @@ import {
   getCurrentWorkoutSession,
   getExerciseHistory,
   saveWorkoutSet,
+  type SetFeeling,
   type WorkoutSet,
 } from "@/api/workouts";
 import {
@@ -19,6 +20,7 @@ import ExerciseGif from "@/components/ExerciseGif";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
 import IronButton from "@/components/IronButton";
 import SessionSetsRecap from "@/components/SessionSetsRecap";
+import FeelingSelector from "@/components/FeelingSelector";
 import { confirmAction } from "@/utils/confirm";
 import { Colors, FontFamily, Radius } from "@/theme";
 
@@ -64,6 +66,30 @@ function nextPosition(workout: ActiveWorkout): ActiveWorkout {
   return { ...workout, exerciseIndex: workout.exerciseIndex + 1, setIndex: 1 };
 }
 
+const WEIGHT_STEP = 2.5;
+
+type Suggestion = { weight: number; message: string | null };
+
+// Poids suggéré pour une série, d'après la série précédente du même exercice dans la séance :
+// Facile → +2,5 kg, Difficile → -2,5 kg, Normal (ou pas de ressenti) → même poids.
+// Ne concerne que la séance en cours ; null s'il n'y a pas encore de série sur cet exercice.
+function suggestFromPreviousSet(sets: WorkoutSet[], exerciseId: string, setIndex: number): Suggestion | null {
+  const previous = sets
+    .filter((set) => set.programExerciseId === exerciseId && set.setIndex < setIndex)
+    .sort((a, b) => b.setIndex - a.setIndex)[0];
+  if (!previous) return null;
+
+  if (previous.feeling === "easy") {
+    const weight = previous.weightUsed + WEIGHT_STEP;
+    return { weight, message: `Série facile — essaie ${formatWeight(weight)} kg cette fois` };
+  }
+  if (previous.feeling === "hard" && previous.weightUsed >= WEIGHT_STEP) {
+    const weight = previous.weightUsed - WEIGHT_STEP;
+    return { weight, message: `Série difficile — essaie ${formatWeight(weight)} kg cette fois` };
+  }
+  return { weight: previous.weightUsed, message: null };
+}
+
 function hasSet(sets: WorkoutSet[], exerciseId: string, setIndex: number) {
   return sets.some((set) => set.programExerciseId === exerciseId && set.setIndex === setIndex);
 }
@@ -87,6 +113,7 @@ export default function LogWorkoutScreen() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
+  const [feeling, setFeeling] = useState<SetFeeling | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -94,6 +121,8 @@ export default function LogWorkoutScreen() {
   const repsInputRef = useRef<TextInput>(null);
 
   const current = workout ? workout.queue[workout.exerciseIndex] : undefined;
+  const suggestion =
+    workout && current ? suggestFromPreviousSet(sessionSets, current.id, workout.setIndex) : null;
   const exerciseDoneMessage = useMemo(() => randomItem(EXERCISE_DONE_MESSAGES), [doneExerciseName]);
   const dayDoneMessage = useMemo(() => randomItem(DAY_DONE_MESSAGES), []);
 
@@ -136,19 +165,17 @@ export default function LogWorkoutScreen() {
     restore();
   }, []);
 
-  // Pré-remplit le poids : celui de la série précédente dans la séance, sinon celui
-  // de la dernière fois sur cet exercice. Les répétitions sont toujours à saisir.
+  // Pré-remplit le poids : la suggestion tirée de la série précédente dans la séance, sinon
+  // le poids de la dernière fois sur cet exercice. Les répétitions et le ressenti sont toujours à saisir.
   const positionKey = workout ? `${workout.exerciseIndex}-${workout.setIndex}` : "";
   useEffect(() => {
     if (!workout || !current) return;
     setReps("");
+    setFeeling(null);
     setError("");
 
-    const previousSets = sessionSets
-      .filter((set) => set.programExerciseId === current.id && set.setIndex < workout.setIndex)
-      .sort((a, b) => b.setIndex - a.setIndex);
-    if (previousSets.length > 0) {
-      setWeight(formatWeight(previousSets[0].weightUsed));
+    if (suggestion) {
+      setWeight(formatWeight(suggestion.weight));
       return;
     }
 
@@ -193,11 +220,22 @@ export default function LogWorkoutScreen() {
       setError("Merci de remplir le poids et les répétitions.");
       return;
     }
+    if (!feeling) {
+      setError("Indique ton ressenti sur la série.");
+      return;
+    }
 
     setSaving(true);
     let saved: WorkoutSet;
     try {
-      saved = await saveWorkoutSet(workout.sessionId, current.id, workout.setIndex, weightNum, repsNum);
+      saved = await saveWorkoutSet(
+        workout.sessionId,
+        current.id,
+        workout.setIndex,
+        weightNum,
+        repsNum,
+        feeling
+      );
     } catch (err) {
       console.error(err);
       setError("Série non enregistrée. Vérifie ta connexion et réessaie.");
@@ -301,6 +339,7 @@ export default function LogWorkoutScreen() {
         <Text style={styles.restLabel}>
           Pause avant la série {workout.setIndex}/{current.targetSets}
         </Text>
+        {suggestion?.message ? <Text style={styles.suggestion}>{suggestion.message}</Text> : null}
         <RestTimer initialSeconds={current.restDuration || 60} onFinish={() => setPhase("set")} />
         {recap}
       </ScrollView>
@@ -318,6 +357,8 @@ export default function LogWorkoutScreen() {
         <Text style={styles.setCounter}>
           Série {workout.setIndex}/{current.targetSets}
         </Text>
+
+        {suggestion?.message ? <Text style={styles.suggestion}>{suggestion.message}</Text> : null}
 
         <View style={styles.inputsRow}>
           <View style={styles.inputGroup}>
@@ -348,6 +389,8 @@ export default function LogWorkoutScreen() {
             />
           </View>
         </View>
+
+        <FeelingSelector value={feeling} onChange={setFeeling} />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -415,6 +458,12 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.headingBold,
     fontSize: 24,
     textTransform: "uppercase",
+    color: Colors.flame,
+    textAlign: "center",
+  },
+  suggestion: {
+    fontFamily: FontFamily.monoBold,
+    fontSize: 14,
     color: Colors.flame,
     textAlign: "center",
   },

@@ -80,7 +80,7 @@ export async function saveWorkoutSet(req: Request, res: Response) {
     if (!parseResult.success) {
       return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
-    const { programExerciseId, setIndex, weightUsed, repsDone } = parseResult.data;
+    const { programExerciseId, setIndex, weightUsed, repsDone, feeling } = parseResult.data;
 
     const session = await prisma.workoutSession.findFirst({
       where: { id: sessionId, userId },
@@ -112,8 +112,8 @@ export async function saveWorkoutSet(req: Request, res: Response) {
       where: {
         sessionId_programExerciseId_setIndex: { sessionId, programExerciseId, setIndex },
       },
-      create: { sessionId, programExerciseId, setIndex, weightUsed, repsDone },
-      update: { weightUsed, repsDone },
+      create: { sessionId, programExerciseId, setIndex, weightUsed, repsDone, feeling },
+      update: { weightUsed, repsDone, ...(feeling ? { feeling } : {}) },
     });
 
     await updateUserStreak(userId);

@@ -1,5 +1,7 @@
 import api from "./client";
 
+export type SetFeeling = "easy" | "normal" | "hard";
+
 export type WorkoutSet = {
   id: string;
   sessionId: string;
@@ -7,6 +9,7 @@ export type WorkoutSet = {
   setIndex: number;
   weightUsed: number;
   repsDone: number;
+  feeling: SetFeeling | null;
 };
 
 export type WorkoutSession = {
@@ -42,13 +45,15 @@ export async function saveWorkoutSet(
   programExerciseId: string,
   setIndex: number,
   weightUsed: number,
-  repsDone: number
+  repsDone: number,
+  feeling?: SetFeeling
 ): Promise<WorkoutSet> {
   const response = await api.post(`/sessions/${sessionId}/sets`, {
     programExerciseId,
     setIndex,
     weightUsed,
     repsDone,
+    feeling,
   });
   return response.data;
 }

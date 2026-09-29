@@ -102,12 +102,20 @@ model WorkoutSession {
   @@index([userId, finishedAt])
 }
 
+enum SetFeeling {
+  easy
+  normal
+  hard
+}
+
 // Une série validée pendant une séance, envoyée à l'API dès sa validation.
 model WorkoutSet {
   id                String          @id @default(uuid())
   setIndex          Int
   weightUsed        Float
   repsDone          Int
+  // Ressenti déclaré sur la série. Null pour une série dont le ressenti n'a pas été saisi.
+  feeling           SetFeeling?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   sessionId         String
