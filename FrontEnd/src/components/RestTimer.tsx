@@ -8,24 +8,44 @@ type RestTimerProps = {
 };
 
 export default function RestTimer({ initialSeconds, onFinish }: RestTimerProps) {
-  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
-  const [isRunning, setIsRunning] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Le chrono repose sur une heure de fin absolue plutôt que sur un compteur décrémenté :
+  // si le navigateur met la page en pause (écran verrouillé), le temps restant est
+  // simplement recalculé à partir de Date.now() au réveil.
+  const [endAt, setEndAt] = useState(() => Date.now() + initialSeconds * 1000);
+  // Temps restant figé pendant une pause (null quand le chrono tourne).
+  const [pausedMs, setPausedMs] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const finishedRef = useRef(false);
+
+  const isRunning = pausedMs === null;
+  const remainingMs = isRunning ? Math.max(0, endAt - now) : pausedMs;
+  const secondsLeft = Math.ceil(remainingMs / 1000);
 
   useEffect(() => {
-    if (isRunning && secondsLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setSecondsLeft((prev) => prev - 1);
-      }, 1000);
+    if (!isRunning) return;
+
+    const tick = () => setNow(Date.now());
+    const interval = setInterval(tick, 250);
+
+    // Au retour au premier plan, on rafraîchit immédiatement sans attendre le prochain tick.
+    const onVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") tick();
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
     }
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
     };
-  }, [isRunning, secondsLeft]);
+  }, [isRunning]);
 
   useEffect(() => {
-    if (secondsLeft === 0) {
+    if (secondsLeft === 0 && !finishedRef.current) {
+      finishedRef.current = true;
       notifyEndOfRest();
       if (onFinish) onFinish();
     }
@@ -63,16 +83,32 @@ export default function RestTimer({ initialSeconds, onFinish }: RestTimerProps) 
   }
 
   function toggle() {
-    setIsRunning((prev) => !prev);
+    const current = Date.now();
+    if (isRunning) {
+      setPausedMs(Math.max(0, endAt - current));
+    } else {
+      setEndAt(current + (pausedMs ?? 0));
+      setPausedMs(null);
+    }
+    setNow(current);
   }
 
   function reset() {
-    setSecondsLeft(initialSeconds);
-    setIsRunning(true);
+    const current = Date.now();
+    finishedRef.current = false;
+    setEndAt(current + initialSeconds * 1000);
+    setPausedMs(null);
+    setNow(current);
   }
 
   function addTime(seconds: number) {
-    setSecondsLeft((prev) => Math.max(0, prev + seconds));
+    const current = Date.now();
+    if (isRunning) {
+      setEndAt((prev) => Math.max(current, prev + seconds * 1000));
+    } else {
+      setPausedMs((prev) => Math.max(0, (prev ?? 0) + seconds * 1000));
+    }
+    setNow(current);
   }
 
   const minutes = Math.floor(secondsLeft / 60);
