@@ -65,7 +65,7 @@ export default function CreateExerciseScreen() {
         setsNum,
         repsNum,
         restNum,
-        0,
+        undefined,
         libraryExercise?.id ?? null
       );
       router.back();

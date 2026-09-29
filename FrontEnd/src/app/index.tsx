@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
+import Animated, { useAnimatedRef } from "react-native-reanimated";
+import Sortable, { type SortableGridDragEndParams } from "react-native-sortables";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
-import { getPrograms, deleteProgram } from "@/api/programs";
+import { getPrograms, deleteProgram, reorderPrograms } from "@/api/programs";
 import { getStreak, getWeekSummary, type WeekSummary } from "@/api/streak";
 import { finishWorkoutSession, getCurrentWorkoutSession } from "@/api/workouts";
 import { clearActiveWorkout, loadActiveWorkout, type ActiveWorkout } from "@/store/activeWorkout";
@@ -33,6 +35,8 @@ export default function HomeScreen() {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
   const [weekSummary, setWeekSummary] = useState<WeekSummary | null>(null);
+  const [reorderError, setReorderError] = useState("");
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
 
   useEffect(() => {
     hydrate();
@@ -124,6 +128,21 @@ export default function HomeScreen() {
     );
   }
 
+  // Glisser-déposer : on affiche le nouvel ordre tout de suite, puis on l'enregistre.
+  // En cas d'échec, on recharge la liste depuis l'API pour revenir à l'ordre enregistré.
+  async function handleProgramsDragEnd({ data }: SortableGridDragEndParams<Program>) {
+    if (data === programs) return;
+    setPrograms(data);
+    setReorderError("");
+    try {
+      await reorderPrograms(data.map((program) => program.id));
+    } catch (error) {
+      console.error(error);
+      setReorderError("Nouvel ordre non enregistré. Réessaie.");
+      loadPrograms();
+    }
+  }
+
   async function confirmDelete(id: string) {
     try {
       await deleteProgram(id);
@@ -133,6 +152,78 @@ export default function HomeScreen() {
       console.error(error);
     }
   }
+
+  const renderProgram = ({ item }: { item: Program }) => (
+    <View style={styles.card}>
+      {confirmingId === item.id ? (
+        <View>
+          <Text style={styles.confirmText}>
+            Supprimer "{item.name}" ? Cette action est irréversible.
+          </Text>
+          <View style={styles.confirmActions}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setConfirmingId(null)}
+            >
+              <Text style={styles.cancelButtonText}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={() => confirmDelete(item.id)}
+            >
+              <Text style={styles.confirmButtonText}>Confirmer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <>
+          <View style={styles.cardHeader}>
+            {programs.length > 1 ? (
+              <Sortable.Handle>
+                <View style={styles.dragHandle}>
+                  <Ionicons name="reorder-three" size={24} color={Colors.muted} />
+                </View>
+              </Sortable.Handle>
+            ) : null}
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={() => router.push(`/programs/${item.id}`)}
+            >
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              {item.description ? (
+                <Text style={styles.cardDescription}>{item.description}</Text>
+              ) : null}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() =>
+                router.push({
+                  pathname: "/edit-program",
+                  params: {
+                    id: item.id,
+                    currentName: item.name,
+                    currentDescription: item.description || "",
+                  },
+                })
+              }
+            >
+              <Ionicons name="pencil" size={18} color={Colors.ink} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => setConfirmingId(item.id)}
+            >
+              <Ionicons name="trash" size={18} color={Colors.accent} />
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </View>
+  );
 
   if (!isHydrated || loadingPrograms) {
     return (
@@ -194,73 +285,24 @@ export default function HomeScreen() {
           <View style={styles.sectionLine} />
         </View>
 
-        <FlatList
-          data={programs}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ gap: 12, paddingBottom: 90 }}
-          ListEmptyComponent={
+        {reorderError ? <Text style={styles.reorderError}>{reorderError}</Text> : null}
+
+        <Animated.ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 90 }}>
+          {programs.length === 0 ? (
             <Text style={styles.empty}>Aucun programme pour l'instant.</Text>
-          }
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              {confirmingId === item.id ? (
-                <View>
-                  <Text style={styles.confirmText}>
-                    Supprimer "{item.name}" ? Cette action est irréversible.
-                  </Text>
-                  <View style={styles.confirmActions}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => setConfirmingId(null)}
-                    >
-                      <Text style={styles.cancelButtonText}>Annuler</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.confirmButton}
-                      onPress={() => confirmDelete(item.id)}
-                    >
-                      <Text style={styles.confirmButtonText}>Confirmer</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ) : (
-                <>
-                  <TouchableOpacity onPress={() => router.push(`/programs/${item.id}`)}>
-                    <Text style={styles.cardTitle}>{item.name}</Text>
-                    {item.description ? (
-                      <Text style={styles.cardDescription}>{item.description}</Text>
-                    ) : null}
-                  </TouchableOpacity>
-
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity
-                      style={styles.iconButton}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/edit-program",
-                          params: {
-                            id: item.id,
-                            currentName: item.name,
-                            currentDescription: item.description || "",
-                          },
-                        })
-                      }
-                    >
-                      <Ionicons name="pencil" size={18} color={Colors.ink} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.iconButton}
-                      onPress={() => setConfirmingId(item.id)}
-                    >
-                      <Ionicons name="trash" size={18} color={Colors.accent} />
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </View>
+          ) : (
+            <Sortable.Grid
+              columns={1}
+              rowGap={12}
+              data={programs}
+              keyExtractor={(item) => item.id}
+              renderItem={renderProgram}
+              onDragEnd={handleProgramsDragEnd}
+              scrollableRef={scrollRef}
+              customHandle
+            />
           )}
-        />
+        </Animated.ScrollView>
       </View>
 
       <View style={styles.addButtonWrap}>
@@ -389,6 +431,21 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.accent,
     borderRadius: Radius,
     padding: 16,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dragHandle: {
+    paddingVertical: 4,
+    paddingRight: 4,
+  },
+  reorderError: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.danger,
+    marginBottom: 8,
   },
   cardTitle: {
     fontFamily: FontFamily.headingSemiBold,

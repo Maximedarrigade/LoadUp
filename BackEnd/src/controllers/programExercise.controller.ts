@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { programExerciseSchema } from "../validators/programExercise.validator";
+import { hasSameIds, reorderSchema } from "../validators/reorder.validator";
 
 export async function createProgramExercise(req: Request, res: Response) {
   try {
@@ -29,13 +30,23 @@ export async function createProgramExercise(req: Request, res: Response) {
       }
     }
 
+    // Sans ordre explicite, l'exercice est ajouté à la fin du jour.
+    let exerciseOrder = order;
+    if (exerciseOrder === undefined) {
+      const { _max } = await prisma.programExercise.aggregate({
+        where: { programDayId: dayId },
+        _max: { order: true },
+      });
+      exerciseOrder = _max.order === null ? 0 : _max.order + 1;
+    }
+
     const exercise = await prisma.programExercise.create({
       data: {
         name,
         targetSets,
         targetReps,
         restDuration,
-        order: order ?? 0,
+        order: exerciseOrder,
         programDayId: dayId,
         exerciseLibraryId: exerciseLibraryId ?? null,
       },
@@ -114,5 +125,38 @@ export async function deleteProgramExercise(req: Request, res: Response) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erreur serveur lors de la suppression de l'exercice." });
+  }
+}
+export async function reorderProgramExercises(req: Request, res: Response) {
+  try {
+    const userId = req.userId as string;
+    const dayId = req.params.dayId as string;
+    const parseResult = reorderSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.issues[0].message });
+    }
+    const { ids } = parseResult.data;
+
+    const day = await prisma.programDay.findFirst({
+      where: { id: dayId, program: { userId } },
+      include: { exercises: { select: { id: true } } },
+    });
+
+    if (!day) {
+      return res.status(404).json({ error: "Jour d'entraînement introuvable." });
+    }
+
+    if (!hasSameIds(ids, day.exercises.map((exercise) => exercise.id))) {
+      return res.status(400).json({ error: "La liste ne correspond pas aux exercices du jour. Recharge la page." });
+    }
+
+    await prisma.$transaction(
+      ids.map((id, index) => prisma.programExercise.update({ where: { id }, data: { order: index } }))
+    );
+
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur lors du réordonnancement des exercices." });
   }
 }

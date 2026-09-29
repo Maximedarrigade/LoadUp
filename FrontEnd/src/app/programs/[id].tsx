@@ -1,8 +1,10 @@
 import { useCallback, useState } from "react";
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
+import Animated, { useAnimatedRef } from "react-native-reanimated";
+import Sortable from "react-native-sortables";
 import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { getProgramById, deleteProgram, deleteProgramExercise } from "@/api/programs";
+import { getProgramById, deleteProgram, deleteProgramExercise, reorderProgramExercises } from "@/api/programs";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 import IronButton from "@/components/IronButton";
 import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
@@ -35,6 +37,8 @@ export default function ProgramDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingExerciseId, setConfirmingExerciseId] = useState<string | null>(null);
+  const [reorderError, setReorderError] = useState("");
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
 
   const loadProgram = useCallback(async () => {
     try {
@@ -63,6 +67,25 @@ export default function ProgramDetailScreen() {
     }
   }
 
+  // Glisser-déposer : nouvel ordre affiché tout de suite, puis enregistré.
+  // En cas d'échec, on recharge le programme pour revenir à l'ordre enregistré.
+  async function handleExercisesDragEnd(dayId: string, previous: Exercise[], data: Exercise[]) {
+    if (data === previous) return;
+    setProgram((prev) =>
+      prev
+        ? { ...prev, days: prev.days.map((day) => (day.id === dayId ? { ...day, exercises: data } : day)) }
+        : prev
+    );
+    setReorderError("");
+    try {
+      await reorderProgramExercises(dayId, data.map((exercise) => exercise.id));
+    } catch (error) {
+      console.error(error);
+      setReorderError("Nouvel ordre non enregistré. Réessaie.");
+      loadProgram();
+    }
+  }
+
   async function handleDeleteExercise(exerciseId: string) {
     try {
       await deleteProgramExercise(exerciseId);
@@ -72,6 +95,93 @@ export default function ProgramDetailScreen() {
       console.error(error);
     }
   }
+
+  const renderExercise = (exercise: Exercise, dayExerciseCount: number) => (
+    <View style={styles.exerciseCard}>
+      {confirmingExerciseId === exercise.id ? (
+        <View>
+          <Text style={styles.confirmTextSmall}>
+            Supprimer "{exercise.name}" ?
+          </Text>
+          <View style={styles.confirmActionsSmall}>
+            <TouchableOpacity
+              style={styles.cancelButtonSmall}
+              onPress={() => setConfirmingExerciseId(null)}
+            >
+              <Text style={styles.cancelButtonText}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.confirmButtonSmall}
+              onPress={() => handleDeleteExercise(exercise.id)}
+            >
+              <Text style={styles.confirmButtonText}>Confirmer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <>
+          <View style={styles.exerciseHeader}>
+            {dayExerciseCount > 1 ? (
+              <Sortable.Handle>
+                <View style={styles.dragHandle}>
+                  <Ionicons name="reorder-three" size={22} color={Colors.muted} />
+                </View>
+              </Sortable.Handle>
+            ) : null}
+            <ExerciseThumbnail
+              exerciseId={exercise.exerciseLibrary?.id}
+              gifUrl={exercise.exerciseLibrary?.gifUrl}
+              size={48}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.exerciseName}>{exercise.name}</Text>
+              <Text style={styles.exerciseDetails}>
+                {exercise.targetSets} séries × {exercise.targetReps} reps —{" "}
+                {exercise.restDuration}s de pause
+              </Text>
+            </View>
+            <View style={styles.exerciseIcons}>
+              <TouchableOpacity
+                style={styles.iconButtonSmall}
+                onPress={() =>
+                  router.push({
+                    pathname: "/edit-exercise",
+                    params: {
+                      exerciseId: exercise.id,
+                      currentName: exercise.name,
+                      currentSets: String(exercise.targetSets),
+                      currentReps: String(exercise.targetReps),
+                      currentRest: String(exercise.restDuration),
+                    },
+                  })
+                }
+              >
+                <Ionicons name="pencil" size={16} color={Colors.ink} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButtonSmall}
+                onPress={() => setConfirmingExerciseId(exercise.id)}
+              >
+                <Ionicons name="trash" size={16} color={Colors.accent} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.progressLink}
+            onPress={() =>
+              router.push({
+                pathname: "/progress",
+                params: { exerciseId: exercise.id, exerciseName: exercise.name },
+              })
+            }
+          >
+            <Text style={styles.progressLinkText}>Voir la progression →</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  );
 
   if (loading) {
     return (
@@ -149,15 +259,17 @@ export default function ProgramDetailScreen() {
         <Text style={styles.addDayButtonText}>+ Ajouter un jour</Text>
       </TouchableOpacity>
 
-      <FlatList
-        data={program.days}
-        keyExtractor={(day) => day.id}
+      {reorderError ? <Text style={styles.reorderError}>{reorderError}</Text> : null}
+
+      <Animated.ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ gap: 24, marginTop: 24, paddingBottom: 40 }}
-        ListEmptyComponent={
+      >
+        {program.days.length === 0 ? (
           <Text style={styles.emptyText}>Aucun jour dans ce programme.</Text>
-        }
-        renderItem={({ item: day }) => (
-          <View>
+        ) : null}
+        {program.days.map((day) => (
+          <View key={day.id}>
             <Text style={styles.dayTitle}>{day.name}</Text>
 
             <IronButton
@@ -187,85 +299,20 @@ export default function ProgramDetailScreen() {
               }
             />
 
-            {day.exercises.map((exercise) => (
-              <View key={exercise.id} style={styles.exerciseCard}>
-                {confirmingExerciseId === exercise.id ? (
-                  <View>
-                    <Text style={styles.confirmTextSmall}>
-                      Supprimer "{exercise.name}" ?
-                    </Text>
-                    <View style={styles.confirmActionsSmall}>
-                      <TouchableOpacity
-                        style={styles.cancelButtonSmall}
-                        onPress={() => setConfirmingExerciseId(null)}
-                      >
-                        <Text style={styles.cancelButtonText}>Annuler</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.confirmButtonSmall}
-                        onPress={() => handleDeleteExercise(exercise.id)}
-                      >
-                        <Text style={styles.confirmButtonText}>Confirmer</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <>
-                    <View style={styles.exerciseHeader}>
-                      <ExerciseThumbnail
-                        exerciseId={exercise.exerciseLibrary?.id}
-                        gifUrl={exercise.exerciseLibrary?.gifUrl}
-                        size={48}
-                      />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.exerciseName}>{exercise.name}</Text>
-                        <Text style={styles.exerciseDetails}>
-                          {exercise.targetSets} séries × {exercise.targetReps} reps —{" "}
-                          {exercise.restDuration}s de pause
-                        </Text>
-                      </View>
-                      <View style={styles.exerciseIcons}>
-                        <TouchableOpacity
-                          style={styles.iconButtonSmall}
-                          onPress={() =>
-                            router.push({
-                              pathname: "/edit-exercise",
-                              params: {
-                                exerciseId: exercise.id,
-                                currentName: exercise.name,
-                                currentSets: String(exercise.targetSets),
-                                currentReps: String(exercise.targetReps),
-                                currentRest: String(exercise.restDuration),
-                              },
-                            })
-                          }
-                        >
-                          <Ionicons name="pencil" size={16} color={Colors.ink} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.iconButtonSmall}
-                          onPress={() => setConfirmingExerciseId(exercise.id)}
-                        >
-                          <Ionicons name="trash" size={16} color={Colors.accent} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.progressLink}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/progress",
-                          params: { exerciseId: exercise.id, exerciseName: exercise.name },
-                        })
-                      }
-                    >
-                      <Text style={styles.progressLinkText}>Voir la progression →</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
+            {day.exercises.length > 0 ? (
+              <View style={styles.exerciseList}>
+                <Sortable.Grid
+                  columns={1}
+                  rowGap={8}
+                  data={day.exercises}
+                  keyExtractor={(exercise) => exercise.id}
+                  renderItem={({ item }) => renderExercise(item, day.exercises.length)}
+                  onDragEnd={({ data }) => handleExercisesDragEnd(day.id, day.exercises, data)}
+                  scrollableRef={scrollRef}
+                  customHandle
+                />
               </View>
-            ))}
+            ) : null}
 
             <TouchableOpacity
               style={styles.addExerciseButton}
@@ -276,8 +323,8 @@ export default function ProgramDetailScreen() {
               <Text style={styles.addExerciseButtonText}>+ Ajouter un exercice</Text>
             </TouchableOpacity>
           </View>
-        )}
-      />
+        ))}
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -397,7 +444,18 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.accent,
     padding: 12,
     borderRadius: Radius,
+  },
+  exerciseList: {
     marginBottom: 8,
+  },
+  dragHandle: {
+    paddingVertical: 4,
+  },
+  reorderError: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.danger,
+    marginTop: 12,
   },
   exerciseHeader: {
     flexDirection: "row",

@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import { Colors, useAppFonts } from "@/theme";
@@ -15,8 +16,9 @@ export default function RootLayout() {
     );
   }
 
+  // GestureHandlerRootView : requis par react-native-sortables (glisser-déposer).
   return (
-    <View style={styles.root}>
+    <GestureHandlerRootView style={styles.root}>
       <AppHeader />
       <View style={{ flex: 1 }}>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.bg } }}>
@@ -27,7 +29,7 @@ export default function RootLayout() {
         </Stack>
       </View>
       <AppFooter />
-    </View>
+    </GestureHandlerRootView>
   );
 }
 

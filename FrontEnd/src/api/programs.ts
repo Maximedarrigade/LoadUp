@@ -36,7 +36,8 @@ export async function createProgramExercise(
   targetSets: number,
   targetReps: number,
   restDuration: number,
-  order: number,
+  // Absent : l'exercice est ajouté à la fin du jour.
+  order?: number,
   exerciseLibraryId?: string | null
 ) {
   const response = await api.post(`/days/${dayId}/exercises`, {
@@ -71,4 +72,11 @@ export async function updateProgramExercise(
 export async function deleteProgramExercise(exerciseId: string) {
   const response = await api.delete(`/days/exercises/${exerciseId}`);
   return response.data;
+}
+export async function reorderPrograms(ids: string[]) {
+  await api.put("/programs/reorder", { ids });
+}
+
+export async function reorderProgramExercises(dayId: string, ids: string[]) {
+  await api.put(`/days/${dayId}/exercises/reorder`, { ids });
 }
