@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import prisma from "../lib/prisma";
 import { registerSchema, loginSchema, updateProfileSchema } from "../validators/auth.validator";
 import { sendEmail } from "../lib/mailer";
 import { encryptDeterministic, decrypt } from "../lib/crypto";
+import { hashPassword, verifyPassword, passwordNeedsRehash } from "../lib/password";
 
 function hashResetToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -25,7 +25,7 @@ export async function register(req: Request, res: Response) {
       return res.status(409).json({ error: "Un compte existe déjà avec cet email." });
     }
 
-    const hashedPassword = await argon2.hash(password);
+    const hashedPassword = await hashPassword(password);
 
     const user = await prisma.user.create({
       data: { email: encryptedEmail, password: hashedPassword, name },
@@ -55,9 +55,19 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ error: "Identifiants invalides." });
     }
 
-    const isPasswordValid = await argon2.verify(user.password, password);
+    const isPasswordValid = await verifyPassword(user.password, password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Identifiants invalides." });
+    }
+
+    // Upgrade hashes made with older settings now that we have the plain password.
+    // A failure here must not block the login: the old hash stays valid.
+    if (passwordNeedsRehash(user.password)) {
+      try {
+        await prisma.user.update({ where: { id: user.id }, data: { password: await hashPassword(password) } });
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     const token = jwt.sign(
@@ -194,7 +204,7 @@ export async function resetPassword(req: Request, res: Response) {
       return res.status(400).json({ error: "Lien invalide ou expiré." });
     }
 
-    const hashedPassword = await argon2.hash(newPassword);
+    const hashedPassword = await hashPassword(newPassword);
 
     await prisma.user.update({
       where: { id: user.id },
