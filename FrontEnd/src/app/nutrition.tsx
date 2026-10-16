@@ -10,6 +10,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getMealsByDate, deleteMeal, DayMeals } from "@/api/meals";
+import MacroProgress from "@/components/MacroProgress";
 import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
 export default function NutritionScreen() {
@@ -60,18 +61,35 @@ export default function NutritionScreen() {
 
       {hasProfile ? (
         <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Calories</Text>
-            <Text style={styles.summaryValue}>
-              {data!.totalCalories} / {data!.targetCalories} kcal
+          <MacroProgress
+            label="Calories"
+            consumed={data!.totalCalories}
+            target={data!.targetCalories!}
+            unit="kcal"
+          />
+          <MacroProgress
+            label="Protéines"
+            consumed={data!.totalProtein}
+            target={data!.targetProtein!}
+            unit="g"
+          />
+          <MacroProgress
+            label="Glucides"
+            consumed={data!.totalCarbs}
+            target={data!.targetCarbs!}
+            unit="g"
+          />
+          <MacroProgress label="Lipides" consumed={data!.totalFat} target={data!.targetFat!} unit="g" />
+          {data!.carbsTargetClamped ? (
+            <Text style={styles.warningText}>
+              Avec ton profil, le calcul donnait moins de 50 g de glucides : l'objectif est
+              ramené à ce minimum.
             </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Protéines</Text>
-            <Text style={styles.summaryValue}>
-              {data!.totalProtein} / {data!.targetProtein} g
-            </Text>
-          </View>
+          ) : null}
+          <Text style={styles.disclaimer}>
+            Objectifs indicatifs, calculés à partir de ton profil (lipides 25 % des calories,
+            glucides pour le reste).
+          </Text>
           <TouchableOpacity onPress={() => router.push("/nutrition-profile")}>
             <Text style={styles.editProfileLink}>Modifier mon profil →</Text>
           </TouchableOpacity>
@@ -102,7 +120,8 @@ export default function NutritionScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.mealName}>{meal.name}</Text>
                 <Text style={styles.mealTotals}>
-                  {meal.totalCalories} kcal — {meal.totalProtein} g protéines
+                  {meal.totalCalories} kcal — P {meal.totalProtein} g · G {meal.totalCarbs} g · L{" "}
+                  {meal.totalFat} g
                 </Text>
               </View>
               <TouchableOpacity
@@ -171,23 +190,18 @@ const styles = StyleSheet.create({
     borderColor: Colors.line,
     borderRadius: Radius,
     padding: 16,
-    gap: 8,
+    gap: 12,
   },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  summaryLabel: {
+  warningText: {
     fontFamily: FontFamily.bodyMedium,
-    fontSize: 14,
-    color: Colors.muted,
+    fontSize: 12,
+    color: Colors.flame,
   },
-  summaryValue: {
-    fontFamily: FontFamily.monoBold,
-    fontSize: 16,
-    color: Colors.ink,
-    fontVariant: ["tabular-nums"],
+  disclaimer: {
+    fontFamily: FontFamily.body,
+    fontSize: 11,
+    color: Colors.muted,
+    fontStyle: "italic",
   },
   editProfileLink: {
     fontFamily: FontFamily.bodySemiBold,

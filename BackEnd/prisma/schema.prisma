@@ -158,6 +158,8 @@ model MealIngredient {
   weightInGrams   Float
   caloriesPer100g Float
   proteinPer100g  Float
+  carbsPer100g    Float?
+  fatPer100g      Float?
   openFoodFactsId String?
   createdAt       DateTime @default(now())
   mealId          String

@@ -7,6 +7,8 @@ export type FoodResult = {
   imageUrl: string | null;
   caloriesPer100g: number;
   proteinPer100g: number;
+  carbsPer100g: number | null;
+  fatPer100g: number | null;
 };
 
 export async function searchFoodByName(query: string): Promise<FoodResult[]> {

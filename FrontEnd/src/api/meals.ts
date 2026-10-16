@@ -6,6 +6,8 @@ export type MealIngredient = {
   weightInGrams: number;
   caloriesPer100g: number;
   proteinPer100g: number;
+  carbsPer100g: number | null;
+  fatPer100g: number | null;
   openFoodFactsId: string | null;
 };
 
@@ -16,14 +18,21 @@ export type Meal = {
   ingredients: MealIngredient[];
   totalCalories: number;
   totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
 };
 
 export type DayMeals = {
   meals: Meal[];
   totalCalories: number;
   totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
   targetCalories: number | null;
   targetProtein: number | null;
+  targetCarbs: number | null;
+  targetFat: number | null;
+  carbsTargetClamped: boolean;
 };
 
 export async function getMealsByDate(date?: string): Promise<DayMeals> {
@@ -48,6 +57,8 @@ export async function addMealIngredient(
     weightInGrams: number;
     caloriesPer100g: number;
     proteinPer100g: number;
+    carbsPer100g?: number | null;
+    fatPer100g?: number | null;
     openFoodFactsId?: string;
   }
 ) {

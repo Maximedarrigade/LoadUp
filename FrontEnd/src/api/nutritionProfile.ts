@@ -14,6 +14,9 @@ export type NutritionProfile = {
   goal: Goal;
   dailyCalories: number;
   dailyProtein: number;
+  dailyCarbs: number;
+  dailyFat: number;
+  carbsClamped: boolean;
 };
 
 export async function getNutritionProfile(): Promise<NutritionProfile> {

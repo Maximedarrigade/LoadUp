@@ -8,6 +8,8 @@ export type FoodResult = {
   imageUrl: string | null;
   caloriesPer100g: number;
   proteinPer100g: number;
+  carbsPer100g: number | null;
+  fatPer100g: number | null;
 };
 
 type RawProduct = {
@@ -18,6 +20,8 @@ type RawProduct = {
   nutriments?: {
     "energy-kcal_100g"?: number;
     proteins_100g?: number;
+    carbohydrates_100g?: number;
+    fat_100g?: number;
   };
 };
 
@@ -52,6 +56,9 @@ function mapProduct(raw: RawProduct): FoodResult | null {
     imageUrl: raw.image_small_url || null,
     caloriesPer100g: calories,
     proteinPer100g: protein,
+    // Carbs/fat are optional so products missing them stay searchable.
+    carbsPer100g: raw.nutriments?.carbohydrates_100g ?? null,
+    fatPer100g: raw.nutriments?.fat_100g ?? null,
   };
 }
 

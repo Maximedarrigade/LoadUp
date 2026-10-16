@@ -28,6 +28,13 @@ const GOAL_PROTEIN_PER_KG: Record<Goal, number> = {
   bulk: 1.8,
 };
 
+// Share of the daily calories allotted to fat; carbs take whatever remains
+// after protein and fat.
+const FAT_CALORIE_SHARE = 0.25;
+// Floor for the carb target: below this the split stops being a sensible
+// everyday diet, so we clamp and let the UI flag it.
+export const MIN_DAILY_CARBS = 50;
+
 export function calculateBMR({ weight, height, age, gender }: NutritionProfileInput): number {
   const base = 10 * weight + 6.25 * height - 5 * age;
   return gender === "male" ? base + 5 : base - 161;
@@ -42,5 +49,10 @@ export function computeNutritionTargets(profile: NutritionProfileInput) {
   const dailyCalories = Math.round(tdee + GOAL_CALORIE_ADJUSTMENT[profile.goal]);
   const dailyProtein = Math.round(profile.weight * GOAL_PROTEIN_PER_KG[profile.goal]);
 
-  return { dailyCalories, dailyProtein };
+  const dailyFat = Math.round((dailyCalories * FAT_CALORIE_SHARE) / 9);
+  const rawCarbs = Math.round((dailyCalories - dailyProtein * 4 - dailyFat * 9) / 4);
+  const carbsClamped = rawCarbs < MIN_DAILY_CARBS;
+  const dailyCarbs = carbsClamped ? MIN_DAILY_CARBS : rawCarbs;
+
+  return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, carbsClamped };
 }

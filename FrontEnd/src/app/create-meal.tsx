@@ -24,6 +24,8 @@ type AddedIngredient = {
   weightInGrams: number;
   calories: number;
   protein: number;
+  carbs: number;
+  fat: number;
 };
 
 export default function CreateMealScreen() {
@@ -41,6 +43,8 @@ export default function CreateMealScreen() {
   const [manualName, setManualName] = useState("");
   const [manualCalories, setManualCalories] = useState("");
   const [manualProtein, setManualProtein] = useState("");
+  const [manualCarbs, setManualCarbs] = useState("");
+  const [manualFat, setManualFat] = useState("");
   const [manualWeight, setManualWeight] = useState("");
 
   const [scanning, setScanning] = useState(false);
@@ -50,6 +54,8 @@ export default function CreateMealScreen() {
   const [addedIngredients, setAddedIngredients] = useState<AddedIngredient[]>([]);
 
   const manualProteinRef = useRef<TextInput>(null);
+  const manualCarbsRef = useRef<TextInput>(null);
+  const manualFatRef = useRef<TextInput>(null);
   const manualWeightRef = useRef<TextInput>(null);
 
   async function handleCreateMeal() {
@@ -108,6 +114,8 @@ export default function CreateMealScreen() {
         weightInGrams: weight,
         caloriesPer100g: selectedFood.caloriesPer100g,
         proteinPer100g: selectedFood.proteinPer100g,
+        carbsPer100g: selectedFood.carbsPer100g,
+        fatPer100g: selectedFood.fatPer100g,
         openFoodFactsId: selectedFood.id,
       });
       setAddedIngredients((prev) => [
@@ -118,6 +126,8 @@ export default function CreateMealScreen() {
           weightInGrams: ingredient.weightInGrams,
           calories: ingredient.calories,
           protein: ingredient.protein,
+          carbs: ingredient.carbs,
+          fat: ingredient.fat,
         },
       ]);
       setSelectedFood(null);
@@ -135,9 +145,16 @@ export default function CreateMealScreen() {
     const weight = parseFloat(manualWeight);
     const calories = parseFloat(manualCalories);
     const protein = parseFloat(manualProtein);
+    // Glucides et lipides facultatifs : champ vide = non renseigné.
+    const carbs = manualCarbs.trim() ? parseFloat(manualCarbs) : null;
+    const fat = manualFat.trim() ? parseFloat(manualFat) : null;
 
     if (!manualName.trim() || !weight || isNaN(calories) || isNaN(protein)) {
-      setError("Merci de remplir tous les champs de l'ajout manuel.");
+      setError("Merci de remplir le nom, les calories, les protéines et le poids.");
+      return;
+    }
+    if ((carbs !== null && isNaN(carbs)) || (fat !== null && isNaN(fat))) {
+      setError("Glucides et lipides doivent être des nombres (ou laissés vides).");
       return;
     }
 
@@ -147,6 +164,8 @@ export default function CreateMealScreen() {
         weightInGrams: weight,
         caloriesPer100g: calories,
         proteinPer100g: protein,
+        carbsPer100g: carbs,
+        fatPer100g: fat,
       });
       setAddedIngredients((prev) => [
         ...prev,
@@ -156,11 +175,15 @@ export default function CreateMealScreen() {
           weightInGrams: ingredient.weightInGrams,
           calories: ingredient.calories,
           protein: ingredient.protein,
+          carbs: ingredient.carbs,
+          fat: ingredient.fat,
         },
       ]);
       setManualName("");
       setManualCalories("");
       setManualProtein("");
+      setManualCarbs("");
+      setManualFat("");
       setManualWeight("");
       setShowManualForm(false);
       setError("");
@@ -225,8 +248,8 @@ export default function CreateMealScreen() {
         <View style={styles.addedList}>
           {addedIngredients.map((ing) => (
             <Text key={ing.id} style={styles.addedItem}>
-              • {ing.name} ({ing.weightInGrams}g) — {Math.round(ing.calories)} kcal /{" "}
-              {Math.round(ing.protein)} g
+              • {ing.name} ({ing.weightInGrams}g) — {Math.round(ing.calories)} kcal · P{" "}
+              {Math.round(ing.protein)} g · G {Math.round(ing.carbs)} g · L {Math.round(ing.fat)} g
             </Text>
           ))}
         </View>
@@ -340,6 +363,28 @@ export default function CreateMealScreen() {
                 placeholder="Protéines / 100g"
                 value={manualProtein}
                 onChangeText={setManualProtein}
+                keyboardType="numeric"
+                placeholderTextColor={Colors.muted}
+                returnKeyType="next"
+                onSubmitEditing={() => manualCarbsRef.current?.focus()}
+              />
+              <TextInput
+                ref={manualCarbsRef}
+                style={[styles.input, styles.numericInput]}
+                placeholder="Glucides / 100g (facultatif)"
+                value={manualCarbs}
+                onChangeText={setManualCarbs}
+                keyboardType="numeric"
+                placeholderTextColor={Colors.muted}
+                returnKeyType="next"
+                onSubmitEditing={() => manualFatRef.current?.focus()}
+              />
+              <TextInput
+                ref={manualFatRef}
+                style={[styles.input, styles.numericInput]}
+                placeholder="Lipides / 100g (facultatif)"
+                value={manualFat}
+                onChangeText={setManualFat}
                 keyboardType="numeric"
                 placeholderTextColor={Colors.muted}
                 returnKeyType="next"

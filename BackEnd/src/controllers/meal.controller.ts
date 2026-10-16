@@ -3,26 +3,45 @@ import prisma from "../lib/prisma";
 import { computeNutritionTargets, NutritionProfileInput } from "../lib/nutrition";
 import { createMealSchema, mealIngredientSchema } from "../validators/meal.validator";
 
-function ingredientTotals(ingredient: { weightInGrams: number; caloriesPer100g: number; proteinPer100g: number }) {
+type IngredientNutrients = {
+  weightInGrams: number;
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number | null;
+  fatPer100g: number | null;
+};
+
+// Ingredients saved before carbs/fat were tracked have null values and count as 0 g.
+function ingredientTotals(ingredient: IngredientNutrients) {
+  const factor = ingredient.weightInGrams / 100;
   return {
-    calories: (ingredient.caloriesPer100g / 100) * ingredient.weightInGrams,
-    protein: (ingredient.proteinPer100g / 100) * ingredient.weightInGrams,
+    calories: ingredient.caloriesPer100g * factor,
+    protein: ingredient.proteinPer100g * factor,
+    carbs: (ingredient.carbsPer100g ?? 0) * factor,
+    fat: (ingredient.fatPer100g ?? 0) * factor,
   };
 }
 
-function mealWithTotals(meal: { ingredients: any[] } & Record<string, any>) {
+function mealWithTotals(meal: { ingredients: IngredientNutrients[] } & Record<string, any>) {
   const totals = meal.ingredients.reduce(
     (acc, ingredient) => {
       const t = ingredientTotals(ingredient);
-      return { calories: acc.calories + t.calories, protein: acc.protein + t.protein };
+      return {
+        calories: acc.calories + t.calories,
+        protein: acc.protein + t.protein,
+        carbs: acc.carbs + t.carbs,
+        fat: acc.fat + t.fat,
+      };
     },
-    { calories: 0, protein: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
   return {
     ...meal,
     totalCalories: Math.round(totals.calories),
     totalProtein: Math.round(totals.protein),
+    totalCarbs: Math.round(totals.carbs),
+    totalFat: Math.round(totals.fat),
   };
 }
 
@@ -78,8 +97,10 @@ export async function getMealsByDate(req: Request, res: Response) {
       (acc, meal) => ({
         calories: acc.calories + meal.totalCalories,
         protein: acc.protein + meal.totalProtein,
+        carbs: acc.carbs + meal.totalCarbs,
+        fat: acc.fat + meal.totalFat,
       }),
-      { calories: 0, protein: 0 }
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
 
     const targets = profile
@@ -90,8 +111,13 @@ export async function getMealsByDate(req: Request, res: Response) {
       meals: mealsWithTotals,
       totalCalories: dayTotals.calories,
       totalProtein: dayTotals.protein,
+      totalCarbs: dayTotals.carbs,
+      totalFat: dayTotals.fat,
       targetCalories: targets?.dailyCalories ?? null,
       targetProtein: targets?.dailyProtein ?? null,
+      targetCarbs: targets?.dailyCarbs ?? null,
+      targetFat: targets?.dailyFat ?? null,
+      carbsTargetClamped: targets?.carbsClamped ?? false,
     });
   } catch (error) {
     console.error(error);
@@ -125,7 +151,8 @@ export async function addMealIngredient(req: Request, res: Response) {
     if (!parseResult.success) {
       return res.status(400).json({ error: parseResult.error.issues[0].message });
     }
-    const { name, weightInGrams, caloriesPer100g, proteinPer100g, openFoodFactsId } = parseResult.data;
+    const { name, weightInGrams, caloriesPer100g, proteinPer100g, carbsPer100g, fatPer100g, openFoodFactsId } =
+      parseResult.data;
 
     const meal = await prisma.meal.findFirst({ where: { id: mealId, userId } });
     if (!meal) {
@@ -138,6 +165,8 @@ export async function addMealIngredient(req: Request, res: Response) {
         weightInGrams,
         caloriesPer100g,
         proteinPer100g,
+        carbsPer100g: carbsPer100g ?? null,
+        fatPer100g: fatPer100g ?? null,
         openFoodFactsId: openFoodFactsId || null,
         mealId,
       },
