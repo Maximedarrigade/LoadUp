@@ -1,0 +1,7 @@
+{
+  // Compilation de production (npm run build) : les scripts de maintenance
+  // (src/scripts) restent lancés via tsx et ne sont pas compilés.
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/scripts"]
+}
