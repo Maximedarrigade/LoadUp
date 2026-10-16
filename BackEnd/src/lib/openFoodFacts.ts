@@ -1,3 +1,5 @@
+import { rankByName } from "./textMatch";
+
 const USER_AGENT = "LoadUp-Muscu/1.0 (contact: maxime.darrigade@orange.fr)";
 const SEARCH_FIELDS = "code,product_name,brands,nutriments,image_small_url";
 
@@ -15,7 +17,8 @@ export type FoodResult = {
 type RawProduct = {
   code?: string;
   product_name?: string;
-  brands?: string;
+  // String on the product API, array of strings on search-a-licious.
+  brands?: string | string[];
   image_small_url?: string;
   nutriments?: {
     "energy-kcal_100g"?: number;
@@ -25,9 +28,8 @@ type RawProduct = {
   };
 };
 
-// The legacy search.pl endpoint intermittently returns 503 under load
-// (documented by Open Food Facts as unstable) — a couple of quick retries
-// clears the vast majority of these transient failures.
+// Open Food Facts occasionally answers 503 under load — a couple of quick
+// retries clears the vast majority of these transient failures.
 async function fetchWithRetry(url: URL, retries = 4): Promise<Response> {
   let lastResponse: Response | null = null;
 
@@ -52,7 +54,7 @@ function mapProduct(raw: RawProduct): FoodResult | null {
   return {
     id: raw.code,
     name: raw.product_name,
-    brand: raw.brands || null,
+    brand: (Array.isArray(raw.brands) ? raw.brands.join(", ") : raw.brands) || null,
     imageUrl: raw.image_small_url || null,
     caloriesPer100g: calories,
     proteinPer100g: protein,
@@ -62,11 +64,15 @@ function mapProduct(raw: RawProduct): FoodResult | null {
   };
 }
 
+// Full-text search goes through search-a-licious, the search service Open Food Facts
+// recommends; the legacy /cgi/search.pl was often returning 503. Results are then
+// re-ranked by how closely the product name matches the query, since the service's
+// own relevance happily ranks "Coconut chicken korma" first for "riz blanc cuit".
 export async function searchFoodByName(query: string): Promise<FoodResult[]> {
-  const url = new URL("https://world.openfoodfacts.org/cgi/search.pl");
-  url.searchParams.set("search_terms", query);
-  url.searchParams.set("json", "1");
-  url.searchParams.set("page_size", "20");
+  const url = new URL("https://search.openfoodfacts.org/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("langs", "fr");
+  url.searchParams.set("page_size", "30");
   url.searchParams.set("fields", SEARCH_FIELDS);
 
   const response = await fetchWithRetry(url);
@@ -74,8 +80,9 @@ export async function searchFoodByName(query: string): Promise<FoodResult[]> {
     throw new Error(`Open Food Facts search failed with status ${response.status}`);
   }
 
-  const data = (await response.json()) as { products?: RawProduct[] };
-  return (data.products ?? []).map(mapProduct).filter((p): p is FoodResult => p !== null);
+  const data = (await response.json()) as { hits?: RawProduct[] };
+  const products = (data.hits ?? []).map(mapProduct).filter((p): p is FoodResult => p !== null);
+  return rankByName(query, products, (p) => p.name).slice(0, 20);
 }
 
 export async function searchFoodByBarcode(code: string): Promise<FoodResult | null> {
