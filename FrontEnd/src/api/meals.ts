@@ -32,6 +32,7 @@ export type DayMeals = {
   targetProtein: number | null;
   targetCarbs: number | null;
   targetFat: number | null;
+  caloriesTargetClamped: boolean;
   carbsTargetClamped: boolean;
 };
 

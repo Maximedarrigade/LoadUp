@@ -11,6 +11,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getMealsByDate, deleteMeal, DayMeals } from "@/api/meals";
 import MacroProgress from "@/components/MacroProgress";
+import { PROTEIN_FOODS, CARB_FOODS, FAT_FOODS } from "@/constants/macroFoods";
 import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
 export default function NutritionScreen() {
@@ -72,14 +73,28 @@ export default function NutritionScreen() {
             consumed={data!.totalProtein}
             target={data!.targetProtein!}
             unit="g"
+            foods={PROTEIN_FOODS}
           />
           <MacroProgress
             label="Glucides"
             consumed={data!.totalCarbs}
             target={data!.targetCarbs!}
             unit="g"
+            foods={CARB_FOODS}
           />
-          <MacroProgress label="Lipides" consumed={data!.totalFat} target={data!.targetFat!} unit="g" />
+          <MacroProgress
+            label="Lipides"
+            consumed={data!.totalFat}
+            target={data!.targetFat!}
+            unit="g"
+            foods={FAT_FOODS}
+          />
+          {data!.caloriesTargetClamped ? (
+            <Text style={styles.warningText}>
+              Avec ton profil, le calcul descendait sous le minimum conseillé : l'objectif est
+              ramené à {data!.targetCalories} kcal par jour.
+            </Text>
+          ) : null}
           {data!.carbsTargetClamped ? (
             <Text style={styles.warningText}>
               Avec ton profil, le calcul donnait moins de 50 g de glucides : l'objectif est

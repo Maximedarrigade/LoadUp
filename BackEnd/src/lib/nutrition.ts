@@ -28,6 +28,12 @@ const GOAL_PROTEIN_PER_KG: Record<Goal, number> = {
   bulk: 1.8,
 };
 
+// Lowest daily calorie target we will ever suggest, whatever the goal.
+const MIN_DAILY_CALORIES: Record<Gender, number> = {
+  female: 1200,
+  male: 1500,
+};
+
 // Share of the daily calories allotted to fat; carbs take whatever remains
 // after protein and fat.
 const FAT_CALORIE_SHARE = 0.25;
@@ -46,7 +52,10 @@ export function calculateTDEE(profile: NutritionProfileInput): number {
 
 export function computeNutritionTargets(profile: NutritionProfileInput) {
   const tdee = calculateTDEE(profile);
-  const dailyCalories = Math.round(tdee + GOAL_CALORIE_ADJUSTMENT[profile.goal]);
+  const rawCalories = Math.round(tdee + GOAL_CALORIE_ADJUSTMENT[profile.goal]);
+  const minCalories = MIN_DAILY_CALORIES[profile.gender];
+  const caloriesClamped = rawCalories < minCalories;
+  const dailyCalories = caloriesClamped ? minCalories : rawCalories;
   const dailyProtein = Math.round(profile.weight * GOAL_PROTEIN_PER_KG[profile.goal]);
 
   const dailyFat = Math.round((dailyCalories * FAT_CALORIE_SHARE) / 9);
@@ -54,5 +63,5 @@ export function computeNutritionTargets(profile: NutritionProfileInput) {
   const carbsClamped = rawCarbs < MIN_DAILY_CARBS;
   const dailyCarbs = carbsClamped ? MIN_DAILY_CARBS : rawCarbs;
 
-  return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, carbsClamped };
+  return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, caloriesClamped, carbsClamped };
 }

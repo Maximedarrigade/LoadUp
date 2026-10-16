@@ -1,15 +1,20 @@
-import { View, Text, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Colors, FontFamily } from "@/theme";
+import { MIXED_FOODS_NOTE } from "@/constants/macroFoods";
 
 type Props = {
   label: string;
   consumed: number;
   target: number;
   unit: string;
+  /** Exemples d'aliments ; si fourni, ajoute un accordéon « Où en trouver ? » (fermé par défaut). */
+  foods?: readonly string[];
 };
 
 /** Barre de progression d'un macro : consommé du jour / cible, avec le reste à consommer. */
-export default function MacroProgress({ label, consumed, target, unit }: Props) {
+export default function MacroProgress({ label, consumed, target, unit, foods }: Props) {
+  const [showFoods, setShowFoods] = useState(false);
   const ratio = target > 0 ? consumed / target : 0;
   const over = consumed > target;
   const remaining = Math.abs(target - consumed);
@@ -30,9 +35,28 @@ export default function MacroProgress({ label, consumed, target, unit }: Props) 
           ]}
         />
       </View>
-      <Text style={[styles.remaining, over && { color: Colors.flame }]}>
-        {over ? `+${remaining} ${unit} au-dessus` : `Reste ${remaining} ${unit}`}
-      </Text>
+      <View style={styles.row}>
+        <Text style={[styles.remaining, over && { color: Colors.flame }]}>
+          {over ? `+${remaining} ${unit} au-dessus` : `Reste ${remaining} ${unit}`}
+        </Text>
+        {foods ? (
+          <TouchableOpacity onPress={() => setShowFoods((prev) => !prev)} hitSlop={8}>
+            <Text style={styles.foodsToggle}>Où en trouver ? {showFoods ? "▴" : "▾"}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      {foods && showFoods ? (
+        <View style={styles.foodsBox}>
+          <View style={styles.chips}>
+            {foods.map((food) => (
+              <Text key={food} style={styles.chip}>
+                {food}
+              </Text>
+            ))}
+          </View>
+          <Text style={styles.mixedNote}>{MIXED_FOODS_NOTE}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -77,5 +101,38 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.muted,
     fontVariant: ["tabular-nums"],
+  },
+  foodsToggle: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: Colors.accent,
+  },
+  foodsBox: {
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    padding: 10,
+    gap: 8,
+    marginTop: 2,
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  chip: {
+    fontFamily: FontFamily.body,
+    fontSize: 12,
+    color: Colors.ink,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  mixedNote: {
+    fontFamily: FontFamily.body,
+    fontSize: 11,
+    color: Colors.muted,
+    fontStyle: "italic",
   },
 });

@@ -16,6 +16,7 @@ export type NutritionProfile = {
   dailyProtein: number;
   dailyCarbs: number;
   dailyFat: number;
+  caloriesClamped: boolean;
   carbsClamped: boolean;
 };
 

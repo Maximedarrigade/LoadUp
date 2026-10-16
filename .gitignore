@@ -1,0 +1,3 @@
+
+# Sauvegardes de la base (pg_dump) : ne jamais les committer
+*.dump

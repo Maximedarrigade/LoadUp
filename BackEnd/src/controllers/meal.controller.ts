@@ -117,6 +117,7 @@ export async function getMealsByDate(req: Request, res: Response) {
       targetProtein: targets?.dailyProtein ?? null,
       targetCarbs: targets?.dailyCarbs ?? null,
       targetFat: targets?.dailyFat ?? null,
+      caloriesTargetClamped: targets?.caloriesClamped ?? false,
       carbsTargetClamped: targets?.carbsClamped ?? false,
     });
   } catch (error) {
