@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { ComponentProps, useRef, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   FlatList,
+  ScrollView,
   ActivityIndicator,
   Keyboard,
   StyleSheet,
@@ -12,7 +13,12 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { createMeal, addMealIngredient } from "@/api/meals";
+import { createMeal, addMealIngredient, getMealsByDate } from "@/api/meals";
+import { getNutritionProfile } from "@/api/nutritionProfile";
+import { analyzeMealPhoto, photoErrorMessage } from "@/api/photoAnalysis";
+import { pickPhoto, compressPhoto } from "@/utils/photo";
+import PhotoMealReview, { PhotoItem, itemTotals, newPhotoItemKey } from "@/components/PhotoMealReview";
+import MealGoalFeedback, { MacroTotals } from "@/components/MealGoalFeedback";
 import { searchFoodByName, searchFoodByBarcode, FoodResult } from "@/api/foodSearch";
 import DismissKeyboardView from "@/components/DismissKeyboardView";
 import IronButton from "@/components/IronButton";
@@ -52,6 +58,14 @@ export default function CreateMealScreen() {
   const [permission, requestPermission] = useCameraPermissions();
 
   const [addedIngredients, setAddedIngredients] = useState<AddedIngredient[]>([]);
+
+  // Analyse photo (PWA uniquement) : rien n'est enregistré avant la validation.
+  const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const [photoItems, setPhotoItems] = useState<PhotoItem[] | null>(null);
+  const [photoRemaining, setPhotoRemaining] = useState<number | null>(null);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+  const [feedback, setFeedback] = useState<ComponentProps<typeof MealGoalFeedback> | null>(null);
 
   const manualProteinRef = useRef<TextInput>(null);
   const manualCarbsRef = useRef<TextInput>(null);
@@ -192,6 +206,109 @@ export default function CreateMealScreen() {
     }
   }
 
+  async function handleTakePhoto() {
+    setPhotoError("");
+    setFeedback(null);
+    const file = await pickPhoto();
+    if (!file) return;
+
+    setAnalyzingPhoto(true);
+    try {
+      let photo: Blob;
+      try {
+        photo = await compressPhoto(file);
+      } catch {
+        setPhotoError("Impossible de lire cette photo. Essaie d'en prendre une autre.");
+        return;
+      }
+      const result = await analyzeMealPhoto(photo);
+      setPhotoRemaining(result.remainingToday);
+      setPhotoItems(
+        result.foods.map((food) => ({
+          key: newPhotoItemKey(),
+          detectedName: food.name,
+          grams: String(food.estimatedGrams),
+          food: food.match,
+        }))
+      );
+    } catch (err: any) {
+      const remaining = err?.response?.data?.remainingToday;
+      if (typeof remaining === "number") setPhotoRemaining(remaining);
+      setPhotoError(photoErrorMessage(err));
+    } finally {
+      setAnalyzingPhoto(false);
+    }
+  }
+
+  async function handleValidatePhoto() {
+    if (!photoItems) return;
+    setSavingPhoto(true);
+    setPhotoError("");
+
+    let id = mealId;
+    const saved: AddedIngredient[] = [];
+    const mealTotals: MacroTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    let remaining = photoItems;
+    try {
+      if (!id) {
+        const meal = await createMeal(mealName);
+        id = meal.id;
+        setMealId(meal.id);
+      }
+      for (const item of photoItems) {
+        const t = itemTotals(item);
+        if (!t || !item.food) continue;
+        const ingredient = await addMealIngredient(id, {
+          name: item.food.name,
+          weightInGrams: t.grams,
+          caloriesPer100g: item.food.caloriesPer100g,
+          proteinPer100g: item.food.proteinPer100g,
+          carbsPer100g: item.food.carbsPer100g,
+          fatPer100g: item.food.fatPer100g,
+          openFoodFactsId: item.food.id,
+        });
+        saved.push({
+          id: ingredient.id,
+          name: ingredient.name,
+          weightInGrams: ingredient.weightInGrams,
+          calories: ingredient.calories,
+          protein: ingredient.protein,
+          carbs: ingredient.carbs,
+          fat: ingredient.fat,
+        });
+        mealTotals.calories += ingredient.calories;
+        mealTotals.protein += ingredient.protein;
+        mealTotals.carbs += ingredient.carbs;
+        mealTotals.fat += ingredient.fat;
+        remaining = remaining.filter((r) => r.key !== item.key);
+      }
+    } catch (err: any) {
+      // Les aliments déjà enregistrés le restent ; on garde les autres à l'écran pour réessayer.
+      setAddedIngredients((prev) => [...prev, ...saved]);
+      setPhotoItems(remaining);
+      setPhotoError(
+        err?.response?.data?.error || "Certains aliments n'ont pas pu être enregistrés. Réessaie."
+      );
+      setSavingPhoto(false);
+      return;
+    }
+
+    setAddedIngredients((prev) => [...prev, ...saved]);
+    setPhotoItems(null);
+    setSavingPhoto(false);
+    try {
+      const [day, goal] = await Promise.all([
+        getMealsByDate(),
+        getNutritionProfile()
+          .then((profile) => profile.goal)
+          .catch(() => null),
+      ]);
+      setFeedback({ meal: mealTotals, day, goal });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   function handleFinish() {
     router.replace("/nutrition");
   }
@@ -205,6 +322,52 @@ export default function CreateMealScreen() {
       }
     }
     setScanning(true);
+  }
+
+  const photoSection =
+    Platform.OS === "web" ? (
+      <View style={styles.photoSection}>
+        <TouchableOpacity
+          style={[styles.photoButton, analyzingPhoto && styles.photoButtonDisabled]}
+          onPress={handleTakePhoto}
+          disabled={analyzingPhoto}
+        >
+          <Text style={styles.photoButtonText}>📸 Photographier mon assiette</Text>
+        </TouchableOpacity>
+        {analyzingPhoto ? (
+          <View style={styles.analyzingBox}>
+            <ActivityIndicator color={Colors.accent} />
+            <Text style={styles.analyzingText}>
+              Analyse de la photo en cours… (jusqu'à une trentaine de secondes)
+            </Text>
+          </View>
+        ) : null}
+        {photoError ? <Text style={styles.photoError}>{photoError}</Text> : null}
+      </View>
+    ) : null;
+
+  if (photoItems) {
+    return (
+      <ScrollView
+        style={{ flex: 1, backgroundColor: Colors.bg }}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>{mealName || "Nouveau repas"}</Text>
+        <PhotoMealReview
+          items={photoItems}
+          onChange={setPhotoItems}
+          onValidate={handleValidatePhoto}
+          onCancel={() => {
+            setPhotoItems(null);
+            setPhotoError("");
+          }}
+          saving={savingPhoto}
+          remainingToday={photoRemaining}
+        />
+        {photoError ? <Text style={styles.photoError}>{photoError}</Text> : null}
+      </ScrollView>
+    );
   }
 
   if (!mealId) {
@@ -221,6 +384,7 @@ export default function CreateMealScreen() {
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <IronButton label="Créer le repas" onPress={handleCreateMeal} />
+        {photoSection}
       </View>
     );
   }
@@ -243,6 +407,8 @@ export default function CreateMealScreen() {
   return (
     <DismissKeyboardView style={styles.container}>
       <Text style={styles.title}>{mealName || "Nouveau repas"}</Text>
+
+      {feedback ? <MealGoalFeedback {...feedback} /> : null}
 
       {addedIngredients.length > 0 ? (
         <View style={styles.addedList}>
@@ -301,6 +467,8 @@ export default function CreateMealScreen() {
               <Text style={styles.searchButtonText}>Chercher</Text>
             </TouchableOpacity>
           </View>
+
+          {photoSection}
 
           {Platform.OS !== "web" ? (
             <TouchableOpacity style={styles.scanButton} onPress={handleOpenScanner}>
@@ -581,6 +749,53 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textTransform: "uppercase",
     letterSpacing: 0.4,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
+    gap: 10,
+  },
+  photoSection: {
+    gap: 8,
+  },
+  photoButton: {
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    padding: 12,
+    borderRadius: Radius,
+    alignItems: "center",
+  },
+  photoButtonDisabled: {
+    opacity: 0.5,
+  },
+  photoButtonText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
+    color: Colors.ink,
+  },
+  analyzingBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    borderRadius: Radius,
+    padding: 12,
+  },
+  analyzingText: {
+    flex: 1,
+    fontFamily: FontFamily.body,
+    fontSize: 13,
+    color: Colors.ink,
+  },
+  photoError: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.flame,
+    textAlign: "center",
   },
   finishButton: {
     backgroundColor: Colors.flame,
