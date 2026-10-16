@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/src/server.js",
     "postinstall": "prisma generate",
     "sync:exercise-library": "tsx src/scripts/syncExerciseLibrary.ts",
     "rotate:encryption-key": "tsx src/scripts/rotateEncryptionKey.ts",

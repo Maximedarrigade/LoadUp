@@ -54,6 +54,20 @@ npm run dev
 
 L'API tourne sur `http://localhost:3000`.
 
+En production, le backend tourne sur le JavaScript compilé (`node dist/src/server.js`,
+beaucoup moins gourmand en mémoire que `tsx`), qui doit être régénéré à chaque déploiement :
+
+```bash
+cd ~/loadup && git pull
+cd BackEnd
+npm install            # seulement si package.json a changé
+npx prisma db push     # seulement si le schéma a changé (sauvegarde de la base avant)
+npx prisma generate
+npm run build          # obligatoire : sans ça, l'ancien code reste en place
+```
+
+Puis redémarrer le site dans le panneau AlwaysData.
+
 ### App
 
 ```bash

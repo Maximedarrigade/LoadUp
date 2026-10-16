@@ -3,3 +3,6 @@ node_modules
 .env
 
 /generated/prisma
+
+# JavaScript compilé (npm run build), généré sur le serveur au déploiement
+/dist
