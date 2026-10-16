@@ -75,3 +75,11 @@ cd FrontEnd
 npm install
 npx expo start
 ```
+
+## Sources des données nutritionnelles
+
+- **Table Ciqual 2025** — Anses. 2025. Table de composition nutritionnelle des aliments Ciqual 2025.
+  https://doi.org/10.57745/RDMHWY — Licence Ouverte / Etalab 2.0. Extrait (énergie, protéines,
+  glucides, lipides) dans `BackEnd/data/ciqual-2025.json`, régénérable avec `npm run build:ciqual`.
+  Utilisée en priorité pour l'estimation d'un repas à partir d'une photo.
+- **Open Food Facts** — recherche manuelle et scan de code-barres (licence ODbL), et secours pour la photo.

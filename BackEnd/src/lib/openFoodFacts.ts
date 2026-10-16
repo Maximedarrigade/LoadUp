@@ -12,6 +12,8 @@ export type FoodResult = {
   proteinPer100g: number;
   carbsPer100g: number | null;
   fatPer100g: number | null;
+  /** Where the nutrition values come from. */
+  source: "off" | "ciqual";
 };
 
 type RawProduct = {
@@ -61,6 +63,7 @@ function mapProduct(raw: RawProduct): FoodResult | null {
     // Carbs/fat are optional so products missing them stay searchable.
     carbsPer100g: raw.nutriments?.carbohydrates_100g ?? null,
     fatPer100g: raw.nutriments?.fat_100g ?? null,
+    source: "off",
   };
 }
 

@@ -19,8 +19,12 @@ export function geminiModels(): string[] {
   return fromEnv && fromEnv.length > 0 ? fromEnv : DEFAULT_MODELS;
 }
 
+// Names are matched against the Ciqual table (Anses), so we ask for its vocabulary:
+// main food first, then variety and cooking, singular, no brand.
 const PROMPT = `Tu analyses la photo d'une assiette ou d'un repas.
-Liste chaque aliment visible séparément, avec un nom générique court en français, tel qu'on le chercherait dans une base nutritionnelle (ex. "riz blanc cuit", "blanc de poulet", "brocoli", "huile d'olive"), sans marque.
+Liste chaque aliment visible séparément, avec un nom générique court en français, au singulier, sans marque, dans le vocabulaire de la table nutritionnelle Ciqual : d'abord l'aliment, puis la variété ou le morceau, puis le mode de cuisson.
+Exemples : "riz blanc cuit", "pâtes sèches cuites", "poulet filet grillé", "poulet cuisse rôtie", "boeuf steak haché cuit", "saumon grillé", "oeuf dur", "pomme de terre rôtie", "frites", "brocoli cuit", "haricot vert cuit", "carotte crue", "salade verte", "sauce tomate à la viande", "pain blanc", "fromage blanc", "huile d'olive".
+Pour un plat composé (ex. lasagnes), donne le plat s'il est courant, sinon ses composants séparés.
 Estime le poids de chaque aliment en grammes, tel qu'il est servi (cuit si cuit).
 N'invente pas d'aliment que tu ne vois pas. Si la photo ne montre pas de nourriture, renvoie containsFood à false et une liste vide.`;
 

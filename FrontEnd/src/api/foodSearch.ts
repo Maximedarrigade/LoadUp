@@ -9,6 +9,8 @@ export type FoodResult = {
   proteinPer100g: number;
   carbsPer100g: number | null;
   fatPer100g: number | null;
+  /** Origine des valeurs : table Ciqual (Anses) ou Open Food Facts. */
+  source?: "ciqual" | "off";
 };
 
 export async function searchFoodByName(query: string): Promise<FoodResult[]> {

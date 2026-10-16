@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { analyzeMealPhoto, PhotoAnalysisError } from "../lib/gemini";
 import { searchFoodByName, FoodResult } from "../lib/openFoodFacts";
+import { bestCiqualMatch } from "../lib/ciqual";
+import { matchScore } from "../lib/textMatch";
 
 export const MAX_PHOTO_BYTES = 1.5 * 1024 * 1024;
 const USER_DAILY_LIMIT = 5;
@@ -41,10 +43,20 @@ function isJpeg(buffer: Buffer) {
   return buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
 }
 
+// Below this similarity the match is more likely wrong than right: better to leave the line
+// empty and let the user pick ("Choisir") than to suggest misleading values.
+const MIN_MATCH_SCORE = 0.7;
+
+// Ciqual first (generic foods, local, instant), Open Food Facts only as a fallback.
 async function findFood(name: string): Promise<FoodResult | null> {
+  const ciqual = bestCiqualMatch(name);
+  if (ciqual && ciqual.match.score >= MIN_MATCH_SCORE) return ciqual.food;
+
   try {
-    const results = await searchFoodByName(name);
-    return results[0] ?? null;
+    const [best] = await searchFoodByName(name);
+    if (!best) return null;
+    const match = matchScore(name, best.name);
+    return match.headMatched && match.score >= MIN_MATCH_SCORE ? best : null;
   } catch (error) {
     console.error(`Open Food Facts: recherche "${name}" échouée`, error);
     return null;
@@ -95,8 +107,8 @@ export async function analyzeMealPhotoHandler(req: Request, res: Response) {
       });
     }
 
-    // Nutrition values come from Open Food Facts, never from the AI. Sequential lookups
-    // keep us within Open Food Facts' search rate limit.
+    // Nutrition values come from Ciqual / Open Food Facts, never from the AI. Sequential
+    // lookups keep the rare Open Food Facts fallbacks within its rate limit.
     const foods = [];
     for (const food of analysis.foods) {
       foods.push({

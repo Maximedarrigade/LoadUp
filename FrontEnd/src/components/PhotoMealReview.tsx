@@ -113,7 +113,10 @@ export default function PhotoMealReview({ items, onChange, onValidate, onCancel,
       <View style={styles.disclaimer}>
         <Text style={styles.disclaimerText}>
           Estimation par IA à partir de ta photo : vérifie les aliments et ajuste les poids avant
-          d'enregistrer. Les valeurs nutritionnelles viennent d'Open Food Facts.
+          d'enregistrer.
+        </Text>
+        <Text style={styles.remainingText}>
+          Valeurs nutritionnelles : table Ciqual 2025 (Anses) en priorité, sinon Open Food Facts.
         </Text>
         {remainingToday !== null ? (
           <Text style={styles.remainingText}>
@@ -138,9 +141,13 @@ export default function PhotoMealReview({ items, onChange, onValidate, onCancel,
             {item.food ? (
               <Text style={styles.matchText} numberOfLines={2}>
                 → {item.food.name} · {Math.round(item.food.caloriesPer100g)} kcal / 100 g
+                {item.food.source === "ciqual" ? " · Ciqual" : " · Open Food Facts"}
               </Text>
             ) : (
-              <Text style={styles.noMatchText}>Aucune correspondance : choisis un aliment.</Text>
+              <Text style={styles.noMatchText}>
+                Pas de correspondance fiable trouvée : appuie sur « Choisir » pour sélectionner
+                l'aliment.
+              </Text>
             )}
 
             <View style={styles.itemRow}>
