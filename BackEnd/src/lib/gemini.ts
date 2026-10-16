@@ -3,7 +3,12 @@ import { z } from "zod";
 // Gemini Interactions API (https://ai.google.dev/gemini-api/docs/interactions).
 // Called with plain fetch on purpose: no SDK, to keep the backend's memory footprint small.
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 20_000;
+// Whole analysis budget across the model chain, so the user never waits more than ~1 min
+// (the frontend gives up at 90 s; AlwaysData does not document a proxy timeout).
+const TOTAL_BUDGET_MS = 60_000;
+// Below this, starting another model is pointless: it could not answer in time.
+const MIN_MODEL_BUDGET_MS = 8_000;
 
 // Tried in order: on a quota error (429) or an unavailable model we move to the next one.
 // Override with GEMINI_MODELS="model-a,model-b" without touching the code.
@@ -90,8 +95,14 @@ export async function analyzeMealPhoto(jpeg: Buffer, onModelCall: () => void): P
 
   const imageBase64 = jpeg.toString("base64");
   let sawQuotaError = false;
+  const startedAt = Date.now();
 
   for (const model of geminiModels()) {
+    const remaining = TOTAL_BUDGET_MS - (Date.now() - startedAt);
+    if (remaining < MIN_MODEL_BUDGET_MS) {
+      console.warn(`Gemini: budget de temps épuisé avant ${model}.`);
+      break;
+    }
     onModelCall();
     let response: Response;
     try {
@@ -108,7 +119,7 @@ export async function analyzeMealPhoto(jpeg: Buffer, onModelCall: () => void): P
           response_format: { type: "text", mime_type: "application/json", schema: RESPONSE_SCHEMA },
           generation_config: { thinking_level: "low" },
         }),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(Math.min(REQUEST_TIMEOUT_MS, remaining)),
       });
     } catch (error) {
       console.error(`Gemini ${model}: requête échouée`, error);

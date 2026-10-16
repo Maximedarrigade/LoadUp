@@ -1,4 +1,4 @@
-import { ComponentProps, useRef, useState } from "react";
+import { ComponentProps, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -61,6 +61,7 @@ export default function CreateMealScreen() {
 
   // Analyse photo (PWA uniquement) : rien n'est enregistré avant la validation.
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
+  const [analysisSeconds, setAnalysisSeconds] = useState(0);
   const [photoError, setPhotoError] = useState("");
   const [photoItems, setPhotoItems] = useState<PhotoItem[] | null>(null);
   const [photoRemaining, setPhotoRemaining] = useState<number | null>(null);
@@ -68,6 +69,14 @@ export default function CreateMealScreen() {
   const [feedback, setFeedback] = useState<ComponentProps<typeof MealGoalFeedback> | null>(null);
 
   const manualProteinRef = useRef<TextInput>(null);
+  // Compteur affiché pendant l'analyse, qui peut durer plusieurs dizaines de secondes.
+  useEffect(() => {
+    if (!analyzingPhoto) return;
+    setAnalysisSeconds(0);
+    const timer = setInterval(() => setAnalysisSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [analyzingPhoto]);
+
   const manualCarbsRef = useRef<TextInput>(null);
   const manualFatRef = useRef<TextInput>(null);
   const manualWeightRef = useRef<TextInput>(null);
@@ -337,9 +346,19 @@ export default function CreateMealScreen() {
         {analyzingPhoto ? (
           <View style={styles.analyzingBox}>
             <ActivityIndicator color={Colors.accent} />
-            <Text style={styles.analyzingText}>
-              Analyse de la photo en cours… (jusqu'à une trentaine de secondes)
-            </Text>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={styles.analyzingText}>
+                {analysisSeconds < 15
+                  ? "Analyse de la photo en cours…"
+                  : analysisSeconds < 40
+                    ? "L'IA prend son temps, encore un instant…"
+                    : "La réponse tarde, on attend encore un peu…"}
+              </Text>
+              <Text style={styles.analyzingHint}>
+                <Text style={styles.analyzingSeconds}>{analysisSeconds} s</Text> · garde l'appli
+                ouverte pendant l'analyse
+              </Text>
+            </View>
           </View>
         ) : null}
         {photoError ? <Text style={styles.photoError}>{photoError}</Text> : null}
@@ -790,6 +809,16 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 13,
     color: Colors.ink,
+  },
+  analyzingHint: {
+    fontFamily: FontFamily.body,
+    fontSize: 12,
+    color: Colors.muted,
+  },
+  analyzingSeconds: {
+    fontFamily: FontFamily.monoBold,
+    color: Colors.ink,
+    fontVariant: ["tabular-nums"],
   },
   photoError: {
     fontFamily: FontFamily.bodyMedium,

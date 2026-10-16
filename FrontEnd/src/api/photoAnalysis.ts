@@ -16,8 +16,8 @@ export type PhotoAnalysisResult = {
 export async function analyzeMealPhoto(photo: Blob): Promise<PhotoAnalysisResult> {
   const response = await api.post("/meals/photo-analysis", photo, {
     headers: { "Content-Type": "image/jpeg" },
-    // Le serveur peut enchaîner plusieurs modèles puis les recherches Open Food Facts.
-    timeout: 120_000,
+    // Le serveur s'arrête au plus tard vers 60 s (chaîne de modèles comprise) : marge incluse.
+    timeout: 90_000,
   });
   return response.data;
 }
