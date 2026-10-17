@@ -10,13 +10,14 @@ type Props = {
   /** Journée relue après l'enregistrement : inclut déjà ce repas. */
   day: DayMeals;
   goal: Goal | null;
+  title?: string;
 };
 
 const percent = (value: number, target: number | null) =>
   target && target > 0 ? Math.round((value / target) * 100) : null;
 
 /** Retour sobre après un repas : part des objectifs du jour et cohérence avec l'objectif. */
-export default function MealGoalFeedback({ meal, day, goal }: Props) {
+export default function MealGoalFeedback({ meal, day, goal, title = "Ce repas dans ta journée" }: Props) {
   if (day.targetCalories == null) {
     return (
       <View style={styles.card}>
@@ -63,7 +64,7 @@ export default function MealGoalFeedback({ meal, day, goal }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Ce repas dans ta journée</Text>
+      <Text style={styles.title}>{title}</Text>
       {rows.map((row) => (
         <View key={row.label} style={styles.row}>
           <Text style={styles.label}>{row.label}</Text>

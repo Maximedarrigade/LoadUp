@@ -30,3 +30,10 @@ export function photoErrorMessage(error: any): string {
   if (!error?.response) return "Connexion au serveur impossible. Vérifie ta connexion et réessaie.";
   return "L'analyse de la photo a échoué. Réessaie ou ajoute les aliments à la main.";
 }
+
+export type PhotoQuota = { limit: number; remainingToday: number };
+
+export async function getPhotoQuota(): Promise<PhotoQuota> {
+  const response = await api.get("/meals/photo-analysis/quota");
+  return response.data;
+}

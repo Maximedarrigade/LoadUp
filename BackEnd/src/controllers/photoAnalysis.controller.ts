@@ -70,6 +70,12 @@ const ERROR_RESPONSES: Record<PhotoAnalysisError["code"], { status: number; erro
   not_configured: { status: 503, error: "L'analyse photo n'est pas encore activée sur le serveur." },
 };
 
+// Lets the app show "X analyses left today" before the user takes a photo.
+export function getPhotoQuota(req: Request, res: Response) {
+  const userId = req.userId as string;
+  res.json({ limit: USER_DAILY_LIMIT, remainingToday: Math.max(0, USER_DAILY_LIMIT - userUsedToday(userId)) });
+}
+
 export async function analyzeMealPhotoHandler(req: Request, res: Response) {
   const userId = req.userId as string;
   const image = req.body;

@@ -21,6 +21,9 @@ type Props = {
   onCancel: () => void;
   saving: boolean;
   remainingToday: number | null;
+  /** Libellés des deux actions (par défaut ceux de l'écran de création de repas). */
+  validateLabel?: string;
+  cancelLabel?: string;
 };
 
 export function itemTotals(item: PhotoItem) {
@@ -40,7 +43,16 @@ let nextKey = 0;
 export const newPhotoItemKey = () => `photo-${Date.now()}-${nextKey++}`;
 
 /** Revue du résultat de l'analyse photo : l'utilisateur corrige tout avant enregistrement. */
-export default function PhotoMealReview({ items, onChange, onValidate, onCancel, saving, remainingToday }: Props) {
+export default function PhotoMealReview({
+  items,
+  onChange,
+  onValidate,
+  onCancel,
+  saving,
+  remainingToday,
+  validateLabel = "Valider et enregistrer",
+  cancelLabel = "Annuler",
+}: Props) {
   const [searchingKey, setSearchingKey] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<FoodResult[]>([]);
@@ -224,14 +236,14 @@ export default function PhotoMealReview({ items, onChange, onValidate, onCancel,
 
       <View style={styles.actions}>
         <IronButton
-          label="Valider et enregistrer"
+          label={validateLabel}
           onPress={onValidate}
           disabled={!canValidate}
           loading={saving}
           style={{ flex: 1 }}
         />
         <TouchableOpacity style={styles.cancelButton} onPress={onCancel} disabled={saving}>
-          <Text style={styles.cancelButtonText}>Annuler</Text>
+          <Text style={styles.cancelButtonText}>{cancelLabel}</Text>
         </TouchableOpacity>
       </View>
     </View>

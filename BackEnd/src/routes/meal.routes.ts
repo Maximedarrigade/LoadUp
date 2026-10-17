@@ -9,6 +9,7 @@ import {
 } from "../controllers/meal.controller";
 import {
   analyzeMealPhotoHandler,
+  getPhotoQuota,
   photoUploadErrorHandler,
   MAX_PHOTO_BYTES,
 } from "../controllers/photoAnalysis.controller";
@@ -19,6 +20,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.post("/", createMeal);
+router.get("/photo-analysis/quota", getPhotoQuota);
 // Raw JPEG body kept in memory only (never written to disk), size-capped before parsing.
 router.post(
   "/photo-analysis",

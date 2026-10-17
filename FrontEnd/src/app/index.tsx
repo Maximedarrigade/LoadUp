@@ -11,6 +11,7 @@ import { finishWorkoutSession, getCurrentWorkoutSession } from "@/api/workouts";
 import { clearActiveWorkout, loadActiveWorkout, type ActiveWorkout } from "@/store/activeWorkout";
 import { confirmAction } from "@/utils/confirm";
 import StreakBadge from "@/components/StreakBadge";
+import ScanMealButton from "@/components/ScanMealButton";
 import IronButton from "@/components/IronButton";
 import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
@@ -238,6 +239,9 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Bonjour {user?.name}</Text>
         <StreakBadge currentStreak={currentStreak} />
+        <View style={styles.scanWrap}>
+          <ScanMealButton compact />
+        </View>
 
         {activeWorkout ? (
           <View style={styles.resumeCard}>
@@ -313,6 +317,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  scanWrap: {
+    marginTop: 12,
+  },
   container: {
     flex: 1,
     padding: 20,
