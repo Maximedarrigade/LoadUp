@@ -92,7 +92,14 @@ export async function updateProgramExercise(req: Request, res: Response) {
 
     const updated = await prisma.programExercise.update({
       where: { id: exerciseId },
-      data: { name, targetSets, targetReps, restDuration, exerciseLibraryId: exerciseLibraryId ?? null },
+      data: {
+        name,
+        targetSets,
+        targetReps,
+        restDuration,
+        // Absent de la requête : le lien avec le catalogue est conservé. null le retire explicitement.
+        ...(exerciseLibraryId !== undefined ? { exerciseLibraryId } : {}),
+      },
       include: { exerciseLibrary: true },
     });
 

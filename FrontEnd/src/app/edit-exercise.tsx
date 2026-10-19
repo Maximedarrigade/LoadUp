@@ -7,10 +7,13 @@ import IronButton from "@/components/IronButton";
 import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function EditExerciseScreen() {
-  const { exerciseId, currentName, currentSets, currentReps, currentRest } =
+  const { exerciseId, currentName, storedName, currentSets, currentReps, currentRest } =
     useLocalSearchParams<{
       exerciseId: string;
+      // Nom affiché (traduit si l'exercice vient du catalogue).
       currentName: string;
+      // Nom enregistré en base : renvoyé tel quel si l'utilisateur ne touche pas au nom.
+      storedName?: string;
       currentSets: string;
       currentReps: string;
       currentRest: string;
@@ -36,7 +39,8 @@ export default function EditExerciseScreen() {
     }
 
     try {
-      await updateProgramExercise(exerciseId, name, setsNum, repsNum, restNum);
+      const nameToSave = name === currentName && storedName ? storedName : name;
+      await updateProgramExercise(exerciseId, nameToSave, setsNum, repsNum, restNum);
       router.back();
     } catch (err: any) {
       setError(err?.response?.data?.error || "Erreur lors de la modification de l'exercice.");

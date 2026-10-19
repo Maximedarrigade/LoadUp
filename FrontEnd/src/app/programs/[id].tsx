@@ -156,6 +156,7 @@ export default function ProgramDetailScreen() {
                     params: {
                       exerciseId: exercise.id,
                       currentName: programExerciseName(exercise),
+                      storedName: exercise.name,
                       currentSets: String(exercise.targetSets),
                       currentReps: String(exercise.targetReps),
                       currentRest: String(exercise.restDuration),
