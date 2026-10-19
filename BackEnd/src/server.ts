@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { createHash } from "crypto";
 import authRoutes from "./routes/auth.routes";
 import programRoutes from "./routes/program.routes";
 import programDayRoutes from "./routes/programDay.routes";
@@ -22,6 +23,35 @@ const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Middlewares
 app.use(helmet());
+
+// DIAGNOSTIC TEMPORAIRE (à retirer avant le merge) : structure des en-têtes posés par le
+// proxy AlwaysData, pour choisir le réglage « trust proxy ». Ne s'active qu'avec l'en-tête
+// x-loadup-diag (requêtes de test) et n'écrit aucune IP en clair : seulement une empreinte
+// courte, sauf pour la plage de documentation 203.0.113.0/24 utilisée comme IP falsifiée.
+function describeIp(raw: string | undefined) {
+  if (!raw) return "absent";
+  const ip = raw.trim().replace(/^::ffff:/, "");
+  if (ip.startsWith("203.0.113.")) return `falsifiée(${ip})`;
+  const kind = /^(127\.|::1$)/.test(ip)
+    ? "loopback"
+    : /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|f[cd])/i.test(ip)
+      ? "privée"
+      : "publique";
+  return `${kind}:${createHash("sha256").update(ip).digest("hex").slice(0, 6)}`;
+}
+app.use((req, _res, next) => {
+  const tag = req.get("x-loadup-diag");
+  if (tag) {
+    const xff = req.get("x-forwarded-for");
+    const entries = xff ? xff.split(",").map(describeIp) : [];
+    console.log(
+      `[diag-proxy] test=${tag.slice(0, 20)} socket=${describeIp(req.socket.remoteAddress)} ` +
+        `xff(${entries.length})=[${entries.join(" , ")}] x-real-ip=${describeIp(req.get("x-real-ip"))} ` +
+        `forwarded=${req.get("forwarded") ? "présent" : "absent"} req.ip=${describeIp(req.ip)}`
+    );
+  }
+  next();
+});
 
 // Les déploiements d'aperçu Vercel (branches, PR) ont une URL différente de la prod :
 // loadup-muscu-<hash>-max-64e3.vercel.app ou loadup-muscu-git-<branche>-max-64e3.vercel.app.
