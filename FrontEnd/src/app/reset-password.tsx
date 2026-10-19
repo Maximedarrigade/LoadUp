@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { resetPassword } from "@/api/auth";
 import IronButton from "@/components/IronButton";
+import { authErrorMessage } from "@/utils/authError";
 import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function ResetPasswordScreen() {
@@ -11,8 +12,12 @@ export default function ResetPasswordScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  // Garde synchrone : deux appuis rapprochés ne doivent envoyer qu'une requête.
+  const submittingRef = useRef(false);
 
   async function handleSubmit() {
+    if (submittingRef.current) return;
     setError("");
 
     if (password !== confirmPassword) {
@@ -20,12 +25,16 @@ export default function ResetPasswordScreen() {
       return;
     }
 
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       await resetPassword(token, password);
       setSuccess(true);
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || "Erreur lors de la réinitialisation.";
-      setError(msg);
+    } catch (err) {
+      setError(authErrorMessage(err, { fallback: "Erreur lors de la réinitialisation." }));
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
@@ -63,7 +72,7 @@ export default function ResetPasswordScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <IronButton label="Réinitialiser" onPress={handleSubmit} style={{ marginTop: 12 }} />
+      <IronButton label="Réinitialiser" onPress={handleSubmit} loading={submitting} style={{ marginTop: 12 }} />
     </View>
   );
 }
