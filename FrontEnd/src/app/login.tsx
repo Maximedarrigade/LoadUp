@@ -1,25 +1,40 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { login } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import IronButton from "@/components/IronButton";
+import { authErrorMessage } from "@/utils/authError";
 import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  // Garde synchrone : deux appuis rapprochés ne doivent envoyer qu'une requête.
+  const submittingRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
 
   async function handleLogin() {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     setError("");
     try {
       const data = await login(email, password);
       setAuth(data.user, data.token);
       router.replace("/");
     } catch (err) {
-      setError("Email ou mot de passe incorrect.");
+      setError(
+        authErrorMessage(err, {
+          unauthorized: "Email ou mot de passe incorrect.",
+          fallback: "Erreur lors de la connexion.",
+        })
+      );
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
@@ -49,7 +64,7 @@ export default function LoginScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <IronButton label="Se connecter" onPress={handleLogin} style={{ marginTop: 12 }} />
+      <IronButton label="Se connecter" onPress={handleLogin} loading={submitting} style={{ marginTop: 12 }} />
 
       <TouchableOpacity onPress={() => router.push("/register")}>
         <Text style={styles.linkText}>Pas encore de compte ? S'inscrire</Text>

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { register, login } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import IronButton from "@/components/IronButton";
+import { authErrorMessage } from "@/utils/authError";
 import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function RegisterScreen() {
@@ -12,9 +13,13 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  // Garde synchrone : deux appuis rapprochés ne doivent envoyer qu'une requête.
+  const submittingRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
 
   async function handleRegister() {
+    if (submittingRef.current) return;
     setError("");
 
     if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
@@ -27,14 +32,18 @@ export default function RegisterScreen() {
       return;
     }
 
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       await register(email, password, name);
       const data = await login(email, password);
       setAuth(data.user, data.token);
       router.replace("/");
-    } catch (err: any) {
-      const message = err?.response?.data?.error || "Erreur lors de l'inscription.";
-      setError(message);
+    } catch (err) {
+      setError(authErrorMessage(err, { fallback: "Erreur lors de l'inscription." }));
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
@@ -83,7 +92,7 @@ export default function RegisterScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <IronButton label="S'inscrire" onPress={handleRegister} style={{ marginTop: 12 }} />
+      <IronButton label="S'inscrire" onPress={handleRegister} loading={submitting} style={{ marginTop: 12 }} />
 
       <TouchableOpacity onPress={() => router.push("/login")}>
         <Text style={styles.linkText}>Déjà un compte ? Se connecter</Text>

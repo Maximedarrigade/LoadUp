@@ -1,11 +1,24 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { type RateLimitInfo } from "express-rate-limit";
 
+// Délai restant renvoyé dans le corps : l'appli web (autre domaine) ne peut pas lire
+// les en-têtes RateLimit-* sans configuration CORS supplémentaire.
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { error: "Trop de tentatives. Réessayez dans 15 minutes." },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res, _next, options) => {
+    const resetTime = (req as typeof req & { rateLimit?: RateLimitInfo }).rateLimit?.resetTime;
+    const retryAfterSeconds = resetTime
+      ? Math.max(1, Math.ceil((resetTime.getTime() - Date.now()) / 1000))
+      : Math.ceil(options.windowMs / 1000);
+    const minutes = Math.ceil(retryAfterSeconds / 60);
+    res.status(options.statusCode).json({
+      error: `Trop de tentatives. Réessaie dans ${minutes} minute${minutes > 1 ? "s" : ""}.`,
+      code: "rate_limited",
+      retryAfterSeconds,
+    });
+  },
 });
 
 // Short-term guard on photo analysis, on top of the per-user daily limit (keyed by user, not IP).

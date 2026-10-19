@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { forgotPassword } from "@/api/auth";
 import IronButton from "@/components/IronButton";
+import { authErrorMessage } from "@/utils/authError";
 import { Colors, FontFamily, Radius } from "@/theme";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  // Garde synchrone : deux appuis rapprochés ne doivent envoyer qu'une requête.
+  const submittingRef = useRef(false);
 
   async function handleSubmit() {
+    if (submittingRef.current) return;
     setError("");
     setMessage("");
 
@@ -19,11 +24,16 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       const data = await forgotPassword(email);
       setMessage(data.message);
     } catch (err) {
-      setError("Erreur lors de l'envoi. Réessaie plus tard.");
+      setError(authErrorMessage(err, { fallback: "Erreur lors de l'envoi. Réessaie plus tard." }));
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
@@ -47,7 +57,7 @@ export default function ForgotPasswordScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {message ? <Text style={styles.success}>{message}</Text> : null}
 
-      <IronButton label="Envoyer le lien" onPress={handleSubmit} style={{ marginTop: 12 }} />
+      <IronButton label="Envoyer le lien" onPress={handleSubmit} loading={submitting} style={{ marginTop: 12 }} />
 
       <TouchableOpacity onPress={() => router.push("/login")}>
         <Text style={styles.linkText}>Retour à la connexion</Text>
