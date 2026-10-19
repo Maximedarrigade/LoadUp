@@ -13,6 +13,7 @@ import exerciseLibraryRoutes from "./routes/exerciseLibrary.routes";
 import nutritionProfileRoutes from "./routes/nutritionProfile.routes";
 import foodSearchRoutes from "./routes/foodSearch.routes";
 import mealRoutes from "./routes/meal.routes";
+import workoutTemplateRoutes from "./routes/workoutTemplate.routes";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -54,6 +55,7 @@ app.use("/exercise-library", exerciseLibraryRoutes);
 app.use("/nutrition-profile", nutritionProfileRoutes);
 app.use("/food-search", foodSearchRoutes);
 app.use("/meals", mealRoutes);
+app.use("/templates", workoutTemplateRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

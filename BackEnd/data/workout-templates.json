@@ -1,0 +1,620 @@
+{
+  "_note": "Séances et programmes prêts proposés dans l'appli. Exercices référencés par leur id ExerciseLibrary ; rest en secondes. Exemples pour débutant à intermédiaire, à adapter.",
+  "sessions": [
+    {
+      "id": "pecs-triceps",
+      "name": "Pecs / Triceps",
+      "focus": "Pectoraux, triceps",
+      "exercises": [
+        {
+          "exerciseLibraryId": "EIeI8Vf",
+          "sets": 4,
+          "reps": 8,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "ns0SIbU",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "v3xmPAR",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "h8LFzo9",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "dU605di",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "RrLske5",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "dos-biceps",
+      "name": "Dos / Biceps",
+      "focus": "Dos, biceps",
+      "exercises": [
+        {
+          "exerciseLibraryId": "RVwzP10",
+          "sets": 4,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "eZyBC3j",
+          "sets": 4,
+          "reps": 8,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "fUBheHs",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "x69MAlq",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "6TG6x2w",
+          "sets": 3,
+          "reps": 10,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "slDvUAU",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "jambes-abdos",
+      "name": "Jambes / Abdos",
+      "focus": "Quadriceps, ischios, mollets, abdos",
+      "exercises": [
+        {
+          "exerciseLibraryId": "qXTaZnJ",
+          "sets": 4,
+          "reps": 8,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "10Z2DXU",
+          "sets": 3,
+          "reps": 10,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "my33uHU",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "17lJ1kr",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "ykUOVze",
+          "sets": 4,
+          "reps": 15,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "TFqbd8t",
+          "sets": 3,
+          "reps": 15,
+          "rest": 45
+        },
+        {
+          "exerciseLibraryId": "I3tsCnC",
+          "sets": 3,
+          "reps": 12,
+          "rest": 45
+        }
+      ]
+    },
+    {
+      "id": "epaules-abdos",
+      "name": "Épaules / Abdos",
+      "focus": "Épaules, trapèzes, abdos",
+      "exercises": [
+        {
+          "exerciseLibraryId": "znQUdHY",
+          "sets": 4,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "DsgkuIt",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "3eGE2JC",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "myfUsKf",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "NJzBsGJ",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "WW95auq",
+          "sets": 3,
+          "reps": 15,
+          "rest": 45
+        },
+        {
+          "exerciseLibraryId": "XVDdcoj",
+          "sets": 3,
+          "reps": 20,
+          "rest": 45
+        }
+      ]
+    },
+    {
+      "id": "bras",
+      "name": "Bras",
+      "focus": "Biceps, triceps",
+      "exercises": [
+        {
+          "exerciseLibraryId": "25GPyDY",
+          "sets": 4,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "J6Dx1Mu",
+          "sets": 4,
+          "reps": 8,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "ae9UoXQ",
+          "sets": 3,
+          "reps": 10,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "2IxROQ1",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "HPlPoQA",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "gAwDzB3",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "push",
+      "name": "Push",
+      "focus": "Pectoraux, épaules, triceps",
+      "exercises": [
+        {
+          "exerciseLibraryId": "EIeI8Vf",
+          "sets": 4,
+          "reps": 8,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "ns0SIbU",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "znQUdHY",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "Pr9Rhf4",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "DsgkuIt",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "dU605di",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "pull",
+      "name": "Pull",
+      "focus": "Dos, biceps, arrière d'épaules",
+      "exercises": [
+        {
+          "exerciseLibraryId": "RVwzP10",
+          "sets": 4,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "C0MA9bC",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "fUBheHs",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "wqNPGCg",
+          "sets": 3,
+          "reps": 15,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "BU15nH4",
+          "sets": 3,
+          "reps": 10,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "slDvUAU",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "legs",
+      "name": "Legs",
+      "focus": "Quadriceps, ischios, fessiers, mollets",
+      "exercises": [
+        {
+          "exerciseLibraryId": "qXTaZnJ",
+          "sets": 4,
+          "reps": 8,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "wQ2c4XD",
+          "sets": 3,
+          "reps": 10,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "10Z2DXU",
+          "sets": 3,
+          "reps": 12,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "Zg3XY7P",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "qKBpF7I",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "bOOdeyc",
+          "sets": 4,
+          "reps": 15,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "haut-du-corps",
+      "name": "Haut du corps",
+      "focus": "Pectoraux, dos, épaules, bras",
+      "exercises": [
+        {
+          "exerciseLibraryId": "SpYC0Kp",
+          "sets": 4,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "eZyBC3j",
+          "sets": 4,
+          "reps": 8,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "67n3r98",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "RVwzP10",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "goJ6ezq",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "NbVPDMW",
+          "sets": 3,
+          "reps": 10,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "3ZflifB",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "bas-du-corps",
+      "name": "Bas du corps",
+      "focus": "Quadriceps, ischios, fessiers, mollets",
+      "exercises": [
+        {
+          "exerciseLibraryId": "Qa55kX1",
+          "sets": 4,
+          "reps": 10,
+          "rest": 120
+        },
+        {
+          "exerciseLibraryId": "rR0LJzx",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "RRWFUcw",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "my33uHU",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "17lJ1kr",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "ykUOVze",
+          "sets": 4,
+          "reps": 15,
+          "rest": 60
+        }
+      ]
+    },
+    {
+      "id": "full-body",
+      "name": "Full body",
+      "focus": "Tout le corps",
+      "exercises": [
+        {
+          "exerciseLibraryId": "yn8yg1r",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "SpYC0Kp",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "fUBheHs",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "znQUdHY",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "rR0LJzx",
+          "sets": 3,
+          "reps": 10,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "TFqbd8t",
+          "sets": 3,
+          "reps": 15,
+          "rest": 45
+        }
+      ]
+    },
+    {
+      "id": "rappel",
+      "name": "Rappel",
+      "focus": "Tout le corps, séance plus légère",
+      "exercises": [
+        {
+          "exerciseLibraryId": "10Z2DXU",
+          "sets": 3,
+          "reps": 12,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "DOoWcnA",
+          "sets": 3,
+          "reps": 12,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "RVwzP10",
+          "sets": 3,
+          "reps": 12,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "67n3r98",
+          "sets": 3,
+          "reps": 12,
+          "rest": 90
+        },
+        {
+          "exerciseLibraryId": "Zg3XY7P",
+          "sets": 3,
+          "reps": 12,
+          "rest": 60
+        },
+        {
+          "exerciseLibraryId": "TFqbd8t",
+          "sets": 3,
+          "reps": 15,
+          "rest": 45
+        }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "id": "split-5-jours",
+      "name": "Split classique 5 jours",
+      "description": "Un groupe musculaire par jour.",
+      "days": [
+        {
+          "session": "pecs-triceps"
+        },
+        {
+          "session": "dos-biceps"
+        },
+        {
+          "session": "jambes-abdos"
+        },
+        {
+          "session": "epaules-abdos"
+        },
+        {
+          "session": "bras"
+        }
+      ]
+    },
+    {
+      "id": "push-pull-legs-rappel",
+      "name": "Push / Pull / Legs + Rappel",
+      "description": "4 jours : poussée, tirage, jambes, puis une séance complète plus légère.",
+      "days": [
+        {
+          "session": "push"
+        },
+        {
+          "session": "pull"
+        },
+        {
+          "session": "legs"
+        },
+        {
+          "session": "rappel"
+        }
+      ]
+    },
+    {
+      "id": "haut-bas",
+      "name": "Haut / Bas",
+      "description": "4 jours en alternant haut et bas du corps.",
+      "days": [
+        {
+          "session": "haut-du-corps"
+        },
+        {
+          "session": "bas-du-corps"
+        },
+        {
+          "session": "haut-du-corps"
+        },
+        {
+          "session": "bas-du-corps"
+        }
+      ]
+    },
+    {
+      "id": "full-body-3-jours",
+      "name": "Full body 3 jours",
+      "description": "3 séances complètes par semaine.",
+      "days": [
+        {
+          "session": "full-body",
+          "name": "Full body — jour 1"
+        },
+        {
+          "session": "full-body",
+          "name": "Full body — jour 2"
+        },
+        {
+          "session": "full-body",
+          "name": "Full body — jour 3"
+        }
+      ]
+    }
+  ]
+}

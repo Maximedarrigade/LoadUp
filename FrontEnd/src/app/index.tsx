@@ -306,7 +306,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.addButtonWrap}>
-        <IronButton label="+ Nouveau programme" onPress={() => router.push("/create-program")} />
+        <IronButton label="+ Nouveau programme" onPress={() => router.push("/new-program")} />
       </View>
     </View>
   );
