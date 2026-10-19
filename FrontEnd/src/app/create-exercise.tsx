@@ -15,6 +15,8 @@ export default function CreateExerciseScreen() {
   const clearSelected = useExerciseSelectionStore((state) => state.clear);
 
   const [name, setName] = useState("");
+  // Nom affiché pour un exercice du catalogue (français s'il existe) ; `name` reste le nom anglais.
+  const [displayName, setDisplayName] = useState("");
   const [sets, setSets] = useState("");
   const [reps, setReps] = useState("");
   const [rest, setRest] = useState("");
@@ -30,6 +32,7 @@ export default function CreateExerciseScreen() {
     useCallback(() => {
       if (selected) {
         setName(selected.name);
+        setDisplayName(selected.displayName);
         setLibraryExercise({ id: selected.id, gifUrl: selected.gifUrl });
         setManualMode(false);
         clearSelected();
@@ -45,6 +48,7 @@ export default function CreateExerciseScreen() {
     setManualMode(true);
     setLibraryExercise(null);
     setName("");
+    setDisplayName("");
   }
 
   async function handleSubmit() {
@@ -91,7 +95,7 @@ export default function CreateExerciseScreen() {
         <View style={styles.pickerRow}>
           <TouchableOpacity style={[styles.input, styles.pickerField]} onPress={openCatalog}>
             <Text style={name ? styles.pickerValue : styles.pickerPlaceholder}>
-              {name || "Toucher pour choisir dans le catalogue"}
+              {displayName || name || "Toucher pour choisir dans le catalogue"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.gifButton} onPress={openCatalog}>

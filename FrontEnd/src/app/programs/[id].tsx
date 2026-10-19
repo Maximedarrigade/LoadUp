@@ -6,6 +6,7 @@ import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getProgramById, deleteProgram, deleteProgramExercise, reorderProgramExercises } from "@/api/programs";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
+import { programExerciseName } from "@/utils/exerciseName";
 import IronButton from "@/components/IronButton";
 import { Colors, FontFamily, Radius, AccentBorderWidth } from "@/theme";
 
@@ -15,7 +16,13 @@ type Exercise = {
   targetSets: number;
   targetReps: number;
   restDuration: number;
-  exerciseLibrary: { id: string; gifUrl: string; bodyParts?: string[] } | null;
+  exerciseLibrary: {
+    id: string;
+    name: string;
+    nameFr?: string | null;
+    gifUrl: string;
+    bodyParts?: string[];
+  } | null;
 };
 
 type Day = {
@@ -101,7 +108,7 @@ export default function ProgramDetailScreen() {
       {confirmingExerciseId === exercise.id ? (
         <View>
           <Text style={styles.confirmTextSmall}>
-            Supprimer "{exercise.name}" ?
+            Supprimer "{programExerciseName(exercise)}" ?
           </Text>
           <View style={styles.confirmActionsSmall}>
             <TouchableOpacity
@@ -134,7 +141,7 @@ export default function ProgramDetailScreen() {
               size={48}
             />
             <View style={{ flex: 1 }}>
-              <Text style={styles.exerciseName}>{exercise.name}</Text>
+              <Text style={styles.exerciseName}>{programExerciseName(exercise)}</Text>
               <Text style={styles.exerciseDetails}>
                 {exercise.targetSets} séries × {exercise.targetReps} reps —{" "}
                 {exercise.restDuration}s de pause
@@ -148,7 +155,7 @@ export default function ProgramDetailScreen() {
                     pathname: "/edit-exercise",
                     params: {
                       exerciseId: exercise.id,
-                      currentName: exercise.name,
+                      currentName: programExerciseName(exercise),
                       currentSets: String(exercise.targetSets),
                       currentReps: String(exercise.targetReps),
                       currentRest: String(exercise.restDuration),
@@ -172,7 +179,7 @@ export default function ProgramDetailScreen() {
             onPress={() =>
               router.push({
                 pathname: "/progress",
-                params: { exerciseId: exercise.id, exerciseName: exercise.name },
+                params: { exerciseId: exercise.id, exerciseName: programExerciseName(exercise) },
               })
             }
           >
@@ -285,7 +292,7 @@ export default function ProgramDetailScreen() {
                     exercisesQueue: JSON.stringify(
                       day.exercises.map((e) => ({
                         id: e.id,
-                        name: e.name,
+                        name: programExerciseName(e),
                         targetSets: e.targetSets,
                         targetReps: e.targetReps,
                         restDuration: e.restDuration,

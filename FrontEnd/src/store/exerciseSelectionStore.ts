@@ -2,7 +2,10 @@ import { create } from "zustand";
 
 export type SelectedLibraryExercise = {
   id: string;
+  // Nom anglais du catalogue : c'est lui qui est enregistré dans le programme.
   name: string;
+  // Nom à afficher (français s'il existe).
+  displayName: string;
   gifUrl: string;
 };
 

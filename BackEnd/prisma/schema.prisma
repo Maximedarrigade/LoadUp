@@ -65,6 +65,9 @@ model ProgramExercise {
 model ExerciseLibrary {
   id               String            @id
   name             String
+  // Nom français, rempli par `npm run apply:exercise-names-fr` (data/exercise-names-fr.json).
+  // Jamais touché par le sync ExerciseDB, qui ne met à jour que les champs de l'API.
+  nameFr           String?
   gifUrl           String
   bodyParts        String[]
   equipments       String[]

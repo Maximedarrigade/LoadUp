@@ -21,6 +21,8 @@ import { Colors, FontFamily, Radius } from "@/theme";
 
 type ExerciseForm = {
   name: string;
+  // Nom affiché pour un exercice du catalogue (français s'il existe) ; `name` reste le nom anglais.
+  displayName?: string;
   sets: string;
   reps: string;
   rest: string;
@@ -56,6 +58,7 @@ export default function CreateProgramScreen() {
           updated[activeSlot.dayIndex].exercises[activeSlot.exerciseIndex] = {
             ...updated[activeSlot.dayIndex].exercises[activeSlot.exerciseIndex],
             name: selected.name,
+            displayName: selected.displayName,
             exerciseLibraryId: selected.id,
             gifUrl: selected.gifUrl,
             manualMode: false,
@@ -79,6 +82,7 @@ export default function CreateProgramScreen() {
     updated[dayIndex].exercises[exerciseIndex] = {
       ...updated[dayIndex].exercises[exerciseIndex],
       name: "",
+      displayName: undefined,
       exerciseLibraryId: null,
       gifUrl: null,
       manualMode: true,
@@ -247,7 +251,7 @@ export default function CreateProgramScreen() {
                     onPress={() => openCatalogFor(dayIndex, exerciseIndex)}
                   >
                     <Text style={exercise.name ? styles.pickerValue : styles.pickerPlaceholder}>
-                      {exercise.name || "Toucher pour choisir dans le catalogue"}
+                      {exercise.displayName || exercise.name || "Toucher pour choisir dans le catalogue"}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity

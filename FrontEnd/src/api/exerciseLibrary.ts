@@ -3,6 +3,7 @@ import api from "./client";
 export type LibraryExercise = {
   id: string;
   name: string;
+  nameFr: string | null;
   gifUrl: string;
   bodyParts: string[];
   equipments: string[];

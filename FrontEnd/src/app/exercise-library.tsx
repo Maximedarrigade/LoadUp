@@ -14,6 +14,7 @@ import {
   getExerciseLibraryBodyParts,
   LibraryExercise,
 } from "@/api/exerciseLibrary";
+import { libraryExerciseName } from "@/utils/exerciseName";
 import { useExerciseSelectionStore } from "@/store/exerciseSelectionStore";
 import ExerciseThumbnail from "@/components/ExerciseThumbnail";
 import { Colors, FontFamily, Radius } from "@/theme";
@@ -32,7 +33,9 @@ const ExerciseRow = memo(function ExerciseRow({
     <TouchableOpacity style={styles.card} onPress={() => onSelect(item)}>
       <ExerciseThumbnail exerciseId={item.id} gifUrl={item.gifUrl} size={56} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.cardName}>{item.name}</Text>
+        <Text style={[styles.cardName, item.nameFr ? null : styles.cardNameEnglish]}>
+          {libraryExerciseName(item)}
+        </Text>
         <Text style={styles.cardMeta}>
           {item.bodyParts.join(", ")}
           {item.equipments.length ? ` — ${item.equipments.join(", ")}` : ""}
@@ -111,7 +114,12 @@ export default function ExerciseLibraryScreen() {
     // Un double-tap déclencherait deux router.back() et quitterait aussi l'écran parent.
     if (hasSelectedRef.current) return;
     hasSelectedRef.current = true;
-    setSelected({ id: exercise.id, name: exercise.name, gifUrl: exercise.gifUrl });
+    setSelected({
+      id: exercise.id,
+      name: exercise.name,
+      displayName: libraryExerciseName(exercise),
+      gifUrl: exercise.gifUrl,
+    });
     router.back();
   }, [setSelected]);
 
@@ -238,6 +246,9 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
     color: Colors.ink,
+  },
+  // Les noms anglais d'ExerciseDB sont en minuscules ; les noms français ont déjà leur majuscule.
+  cardNameEnglish: {
     textTransform: "capitalize",
   },
   cardMeta: {

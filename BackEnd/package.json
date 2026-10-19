@@ -11,7 +11,8 @@
     "sync:exercise-library": "tsx src/scripts/syncExerciseLibrary.ts",
     "rotate:encryption-key": "tsx src/scripts/rotateEncryptionKey.ts",
     "generate:exercise-thumbnails": "tsx src/scripts/generateExerciseThumbnails.ts",
-    "build:ciqual": "tsx src/scripts/buildCiqual.ts"
+    "build:ciqual": "tsx src/scripts/buildCiqual.ts",
+    "apply:exercise-names-fr": "tsx src/scripts/applyExerciseNamesFr.ts"
   },
   "keywords": [],
   "author": "",

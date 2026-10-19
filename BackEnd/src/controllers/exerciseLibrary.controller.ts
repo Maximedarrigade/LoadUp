@@ -1,7 +1,35 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { Prisma } from "../../generated/prisma/client";
 
 const PAGE_SIZE = 30;
+
+// Mêmes lettres des deux côtés : « developpe couche » trouve « Développé couché ».
+const ACCENTED = "àâäáãåçéèêëíìîïñóòôöõúùûüýÿ";
+const PLAIN = "aaaaaaceeeeiiiinooooouuuuyy";
+
+function normalize(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae");
+}
+
+// Ids des exercices dont le nom français ou anglais contient chaque mot recherché.
+async function searchExerciseIds(search: string) {
+  const words = normalize(search).split(/\s+/).filter(Boolean).slice(0, 8);
+  const haystack = Prisma.sql`(translate(replace(replace(lower(coalesce("nameFr", '')), 'œ', 'oe'), 'æ', 'ae'), ${ACCENTED}, ${PLAIN}) || ' ' || lower(name))`;
+  const conditions = words.map((word) => {
+    const pattern = `%${word.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    return Prisma.sql`${haystack} LIKE ${pattern}`;
+  });
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT id FROM "ExerciseLibrary" WHERE ${Prisma.join(conditions, " AND ")}
+  `;
+  return rows.map((row) => row.id);
+}
 
 export async function listExerciseLibrary(req: Request, res: Response) {
   try {
@@ -9,14 +37,17 @@ export async function listExerciseLibrary(req: Request, res: Response) {
     const bodyPart = typeof req.query.bodyPart === "string" ? req.query.bodyPart.trim() : "";
     const cursor = typeof req.query.cursor === "string" ? req.query.cursor : undefined;
 
+    const matchingIds = search ? await searchExerciseIds(search) : null;
+
     const where = {
-      ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
+      ...(matchingIds ? { id: { in: matchingIds } } : {}),
       ...(bodyPart ? { bodyParts: { has: bodyPart } } : {}),
     };
 
     const exercises = await prisma.exerciseLibrary.findMany({
       where,
-      orderBy: { name: "asc" },
+      // Ordre alphabétique du nom affiché (français s'il existe, sinon anglais).
+      orderBy: [{ nameFr: { sort: "asc", nulls: "last" } }, { name: "asc" }, { id: "asc" }],
       take: PAGE_SIZE + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
