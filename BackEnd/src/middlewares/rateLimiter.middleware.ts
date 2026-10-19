@@ -1,4 +1,21 @@
-import rateLimit, { type RateLimitInfo } from "express-rate-limit";
+import { isIP } from "net";
+import type { Request } from "express";
+import rateLimit, { ipKeyGenerator, type RateLimitInfo } from "express-rate-limit";
+
+// IP du client pour le limiteur, derrière le proxy AlwaysData (mesuré le 19/10/2026) :
+// - le proxy se connecte à l'appli en loopback, donc req.ip est le même pour tout le monde ;
+// - il écrase X-Real-IP avec l'IP du visiteur (une valeur envoyée par le client est remplacée) ;
+// - il ne pose PAS X-Forwarded-For : celui envoyé par le client arrive tel quel, falsifiable.
+// D'où « trust proxy » désactivé (server.ts) : Express lirait X-Forwarded-For. On ne fait
+// confiance à X-Real-IP que si la connexion vient bien du proxy (loopback).
+const LOOPBACK = /^(127\.|::ffff:127\.|::1$)/;
+
+export function clientIp(req: Request) {
+  const socketIp = req.socket.remoteAddress ?? "";
+  const realIp = req.get("x-real-ip")?.trim();
+  if (realIp && isIP(realIp) && LOOPBACK.test(socketIp)) return realIp;
+  return socketIp;
+}
 
 // Délai restant renvoyé dans le corps : l'appli web (autre domaine) ne peut pas lire
 // les en-têtes RateLimit-* sans configuration CORS supplémentaire.
@@ -7,6 +24,10 @@ export const authRateLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  // ipKeyGenerator regroupe les IPv6 par /56, comme le comportement par défaut.
+  keyGenerator: (req) => ipKeyGenerator(clientIp(req)),
+  // X-Forwarded-For est volontairement ignoré (voir clientIp) : pas d'avertissement à son sujet.
+  validate: { xForwardedForHeader: false },
   handler: (req, res, _next, options) => {
     const resetTime = (req as typeof req & { rateLimit?: RateLimitInfo }).rateLimit?.resetTime;
     const retryAfterSeconds = resetTime

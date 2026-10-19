@@ -20,6 +20,10 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.IP || "0.0.0.0";
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
+// Jamais de « trust proxy » : le proxy AlwaysData transmet tel quel le X-Forwarded-For du
+// client, qui deviendrait alors falsifiable. L'IP réelle est lue dans X-Real-IP (clientIp).
+app.set("trust proxy", false);
+
 // Middlewares
 app.use(helmet());
 
